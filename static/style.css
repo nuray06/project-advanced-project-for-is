@@ -1,0 +1,13 @@
+body {
+    font-family: Arial;
+    margin: 40px;
+}
+
+h1 {
+    color: darkblue;
+}
+
+canvas {
+    max-width: 600px;
+    margin-bottom: 30px;
+}

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — JobScope KZ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a26;
+            --accent: #6ee7b7;
+            --accent2: #818cf8;
+            --accent3: #fb923c;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --border: rgba(255,255,255,0.06);
+            --sidebar: 240px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Mulish', sans-serif;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            padding: 0 24px 32px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-logo span { color: var(--accent); }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: var(--muted);
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+        .nav-item.active {
+            color: var(--accent);
+            border-left-color: var(--accent);
+            background: rgba(110,231,183,0.05);
+        }
+
+        .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--text); }
+
+        /* Main */
+        .main {
+            margin-left: var(--sidebar);
+            flex: 1;
+            padding: 36px 40px;
+            overflow-y: auto;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .page-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .page-subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+            font-weight: 300;
+        }
+
+        /* KPI cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .kpi-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        /* Charts grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .chart-card.full { grid-column: 1 / -1; }
+
+        .chart-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+        .chart-dot.purple { background: var(--accent2); }
+        .chart-dot.orange { background: var(--accent3); }
+
+        canvas { max-height: 280px; }
+
+        /* Filter page */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select, .filter-input {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Mulish', sans-serif;
+            font-size: 0.9rem;
+            padding: 10px 16px;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.2s;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-select:focus, .filter-input:focus {
+            border-color: rgba(110,231,183,0.4);
+        }
+
+        .results-table {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--surface2);
+            padding: 14px 20px;
+            text-align: left;
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody td {
+            padding: 14px 20px;
+            font-size: 0.88rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .salary-badge {
+            color: var(--accent);
+            font-weight: 600;
+            font-family: 'Syne', sans-serif;
+        }
+
+        .job-link {
+            color: var(--accent2);
+            text-decoration: none;
+            font-size: 0.78rem;
+        }
+        .job-link:hover { text-decoration: underline; }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            justify-content: center;
+        }
+
+        .page-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .page-btn:disabled { opacity: 0.35; cursor: default; }
+
+        .page-info {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        /* Classify page */
+        .classify-container {
+            max-width: 640px;
+        }
+
+        .classify-input-wrap {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Mulish', sans-serif;
+            font-size: 0.95rem;
+            padding: 18px;
+            border-radius: 14px;
+            resize: none;
+            height: 140px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus { border-color: rgba(110,231,183,0.4); }
+        textarea::placeholder { color: var(--muted); }
+
+        .btn-classify {
+            background: var(--accent);
+            color: #0a0a0f;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-classify:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(110,231,183,0.2);
+        }
+
+        .prediction-card {
+            margin-top: 24px;
+            background: var(--surface);
+            border: 1px solid rgba(110,231,183,0.15);
+            border-radius: 16px;
+            padding: 28px;
+            display: none;
+        }
+
+        .prediction-card.show { display: block; }
+
+        .prediction-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .prediction-result {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .charts-grid .chart-card.full { grid-column: 1; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">Job<span>Scope</span> KZ</div>
+
+        <nav>
+            <div class="nav-item active" onclick="showPage('overview')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Обзор
+            </div>
+            <div class="nav-item" onclick="showPage('skills')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Навыки
+            </div>
+            <div class="nav-item" onclick="showPage('salary')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Зарплаты
+            </div>
+            <div class="nav-item" onclick="showPage('jobs')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Вакансии
+            </div>
+            <div class="nav-item" onclick="showPage('classify')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                AI Классификатор
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/" class="back-link">
+                ← На главную
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <!-- OVERVIEW -->
+        <section class="page active" id="page-overview">
+            <h1 class="page-title">Обзор рынка</h1>
+            <p class="page-subtitle">Ключевые метрики и тренды</p>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Всего вакансий</div>
+                    <div class="kpi-value" id="kpi-total">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Компаний</div>
+                    <div class="kpi-value" id="kpi-companies" style="color:var(--accent2)">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Средняя зарплата</div>
+                    <div class="kpi-value" id="kpi-avg">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Топ город</div>
+                    <div class="kpi-value" id="kpi-city" style="color:var(--accent3);font-size:1.2rem">—</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title"><span class="chart-dot orange"></span>Вакансии по городам</div>
+                    <canvas id="citiesChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title"><span class="chart-dot purple"></span>Топ-10 навыков</div>
+                    <canvas id="skillsOverviewChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SKILLS -->
+        <section class="page" id="page-skills">
+            <h1 class="page-title">Востребованные навыки</h1>
+            <p class="page-subtitle">Топ-15 навыков по количеству упоминаний в вакансиях</p>
+            <div class="chart-card">
+                <div class="chart-title"><span class="chart-dot"></span>Топ навыки</div>
+                <canvas id="skillsChart" style="max-height:400px"></canvas>
+            </div>
+        </section>
+
+        <!-- SALARY -->
+        <section class="page" id="page-salary">
+            <h1 class="page-title">Анализ зарплат</h1>
+            <p class="page-subtitle">Средние зарплаты (в тенге) по специальностям</p>
+            <div class="chart-card">
+                <div class="chart-title"><span class="chart-dot"></span>Средние зарплаты по должностям</div>
+                <canvas id="salaryChart" style="max-height:420px"></canvas>
+            </div>
+        </section>
+
+        <!-- JOBS -->
+        <section class="page" id="page-jobs">
+            <h1 class="page-title">Вакансии</h1>
+            <p class="page-subtitle">Фильтрация и просмотр вакансий</p>
+
+            <div class="filter-bar">
+                <select class="filter-select" id="titleSelect">
+                    <option value="">Все должности</option>
+                </select>
+                <select class="filter-select" id="citySelect">
+                    <option value="">Все города</option>
+                </select>
+            </div>
+
+            <div class="results-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Должность</th>
+                            <th>Компания</th>
+                            <th>Город</th>
+                            <th>Зарплата (KZT)</th>
+                            <th>Ссылка</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsBody">
+                        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <button class="page-btn" id="prevBtn" onclick="changePage(-1)" disabled>← Назад</button>
+                    <span class="page-info" id="pageInfo">—</span>
+                    <button class="page-btn" id="nextBtn" onclick="changePage(1)">Вперёд →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLASSIFY -->
+        <section class="page" id="page-classify">
+            <h1 class="page-title">AI Классификатор</h1>
+            <p class="page-subtitle">Определи категорию вакансии по описанию</p>
+
+            <div class="classify-container">
+                <div class="classify-input-wrap">
+                    <textarea id="jobText" placeholder="Вставь описание вакансии или навыки (Django, REST API, PostgreSQL...)"></textarea>
+                </div>
+                <button class="btn-classify" onclick="classify()">Классифицировать →</button>
+
+                <div class="prediction-card" id="predictionCard">
+                    <div class="prediction-label">Категория вакансии</div>
+                    <div class="prediction-result" id="predictionResult">—</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // === NAVIGATION ===
+        function showPage(name) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + name).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // === CHART DEFAULTS ===
+        const chartDefaults = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1a26',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    borderWidth: 1,
+                    titleColor: '#e2e8f0',
+                    bodyColor: '#94a3b8',
+                    padding: 12,
+                    cornerRadius: 10,
+                }
+            }
+        };
+
+        // === STATS ===
+        fetch('/api/stats').then(r => r.json()).then(d => {
+            document.getElementById('kpi-total').textContent = d.total_jobs.toLocaleString('ru');
+            document.getElementById('kpi-companies').textContent = d.unique_companies.toLocaleString('ru');
+            document.getElementById('kpi-avg').textContent = d.avg_salary_kzt
+                ? Math.round(d.avg_salary_kzt / 1000) + 'K ₸' : 'N/A';
+            document.getElementById('kpi-city').textContent = d.top_city || '—';
+        }).catch(() => {});
+
+        // === CITIES CHART ===
+        fetch('/api/cities').then(r => r.json()).then(data => {
+            new Chart(document.getElementById('citiesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        data: Object.values(data),
+                        backgroundColor: [
+                            '#6ee7b7','#818cf8','#fb923c','#f472b6','#38bdf8',
+                            '#a3e635','#e879f9','#34d399','#60a5fa','#fbbf24'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    plugins: {
+                        ...chartDefaults.plugins,
+                        legend: {
+                            display: true,
+                            position: 'right',
+                            labels: { color: '#94a3b8', boxWidth: 12, padding: 10, font: { family: 'Mulish', size: 11 } }
+                        }
+                    }
+                }
+            });
+        });
+
+        // === SKILLS OVERVIEW (mini) ===
+        fetch('/api/skills').then(r => r.json()).then(data => {
+            const top10keys = Object.keys(data).slice(0, 10);
+            const top10vals = top10keys.map(k => data[k]);
+            new Chart(document.getElementById('skillsOverviewChart'), {
+                type: 'bar',
+                data: {
+                    labels: top10keys,
+                    datasets: [{
+                        data: top10vals,
+                        backgroundColor: 'rgba(129,140,248,0.7)',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 11 } } },
+                        y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }
+                    }
+                }
+            });
+        });
+
+        // === SKILLS PAGE (full) ===
+        fetch('/api/skills').then(r => r.json()).then(data => {
+            new Chart(document.getElementById('skillsChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        label: 'Упоминаний',
+                        data: Object.values(data),
+                        backgroundColor: 'rgba(110,231,183,0.75)',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
+                        y: { grid: { display: false }, ticks: { color: '#e2e8f0', font: { size: 12 } } }
+                    }
+                }
+            });
+        });
+
+        // === SALARY CHART ===
+        fetch('/api/salary').then(r => r.json()).then(data => {
+            const labels = Object.keys(data).map(l => l.length > 35 ? l.slice(0, 35) + '…' : l);
+            new Chart(document.getElementById('salaryChart'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Ср. зарплата (₸)',
+                        data: Object.values(data),
+                        backgroundColor: 'rgba(251,146,60,0.75)',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: {
+                                color: '#64748b',
+                                callback: v => (v / 1000).toFixed(0) + 'K'
+                            }
+                        },
+                        y: { grid: { display: false }, ticks: { color: '#e2e8f0', font: { size: 11 } } }
+                    }
+                }
+            });
+        });
+
+        // === JOBS PAGE ===
+        let currentPage = 1;
+        let currentTitle = '';
+        let currentCity = '';
+        let totalPages = 1;
+
+        // Load job titles
+        fetch('/api/jobs/list').then(r => r.json()).then(titles => {
+            const sel = document.getElementById('titleSelect');
+            titles.slice(0, 100).forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t; opt.textContent = t;
+                sel.appendChild(opt);
+            });
+        });
+
+        // Load cities
+        fetch('/api/cities').then(r => r.json()).then(cities => {
+            const sel = document.getElementById('citySelect');
+            Object.keys(cities).forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                sel.appendChild(opt);
+            });
+        });
+
+        document.getElementById('titleSelect').addEventListener('change', function() {
+            currentTitle = this.value;
+            currentPage = 1;
+            loadJobs();
+        });
+
+        document.getElementById('citySelect').addEventListener('change', function() {
+            currentCity = this.value;
+            currentPage = 1;
+            loadJobs();
+        });
+
+        function loadJobs() {
+            const params = new URLSearchParams({ page: currentPage });
+            if (currentTitle) params.append('title', currentTitle);
+            if (currentCity) params.append('city', currentCity);
+
+            fetch('/api/filter?' + params).then(r => r.json()).then(d => {
+                totalPages = d.pages || 1;
+                const body = document.getElementById('jobsBody');
+
+                if (!d.jobs.length) {
+                    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px">Нет вакансий</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = d.jobs.map(job => `
+                    <tr>
+                        <td>${job.title}</td>
+                        <td style="color:var(--muted)">${job.company}</td>
+                        <td>${job.city}</td>
+                        <td><span class="salary-badge">${job.salary}</span></td>
+                        <td>${job.url ? `<a href="${job.url}" target="_blank" class="job-link">hh.ru →</a>` : '—'}</td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('pageInfo').textContent = `Стр. ${currentPage} из ${totalPages} (${d.total} вакансий)`;
+                document.getElementById('prevBtn').disabled = currentPage <= 1;
+                document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+            });
+        }
+
+        function changePage(dir) {
+            currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+            loadJobs();
+        }
+
+        loadJobs();
+
+        // === CLASSIFY ===
+        function classify() {
+            const text = document.getElementById('jobText').value.trim();
+            if (!text) return;
+
+            fetch('/api/classify?text=' + encodeURIComponent(text))
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('predictionResult').textContent = d.prediction;
+                    document.getElementById('predictionCard').classList.add('show');
+                });
+        }
+    </script>
+</body>
+</html>
