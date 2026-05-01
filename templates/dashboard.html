@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — JobScope KZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="app-body">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Job<span>Scope</span> KZ</div>
+    <nav>
+      <div class="nav-item active" onclick="showPage(event,'overview')"><span data-i18n="overview">Обзор</span></div>
+      <div class="nav-item" onclick="showPage(event,'skills')"><span data-i18n="skills">Навыки</span></div>
+      <div class="nav-item" onclick="showPage(event,'salary')"><span data-i18n="salary">Зарплаты</span></div>
+      <div class="nav-item" onclick="showPage(event,'jobs')"><span data-i18n="jobs">Вакансии</span></div>
+      <div class="nav-item" onclick="showPage(event,'career')"><span>AI Career Assistant</span></div>
+      <div class="nav-item" onclick="showPage(event,'about')"><span data-i18n="about">О проекте</span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      <a href="/" class="back-link" data-i18n="backHome">← На главную</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="page active" id="page-overview">
+      <h1 class="page-title" data-i18n="marketOverview">Обзор рынка</h1>
+      <p class="page-subtitle" data-i18n="overviewSub">Ключевые метрики и тренды IT-вакансий</p>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label" data-i18n="totalJobs">Всего вакансий</div><div class="kpi-value" id="kpi-total">—</div></div>
+        <div class="kpi-card"><div class="kpi-label" data-i18n="companies">Компаний</div><div class="kpi-value purple" id="kpi-companies">—</div></div>
+        <div class="kpi-card"><div class="kpi-label" data-i18n="avgSalary">Средняя зарплата</div><div class="kpi-value" id="kpi-avg">—</div></div>
+        <div class="kpi-card"><div class="kpi-label" data-i18n="topCity">Топ город</div><div class="kpi-value orange small" id="kpi-city">—</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card"><div class="chart-title">🏙️ <span data-i18n="jobsByCity">Вакансии по городам</span></div><canvas id="citiesChart"></canvas></div>
+        <div class="chart-card"><div class="chart-title">⚡ <span data-i18n="topSkills10">Топ-10 навыков</span></div><canvas id="skillsOverviewChart"></canvas></div>
+        <div class="chart-card full"><div class="chart-title">✅ <span data-i18n="salaryQuality">Качество данных по зарплате</span></div><canvas id="salaryQualityChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-skills">
+      <h1 class="page-title" data-i18n="demandedSkills">Востребованные навыки</h1>
+      <p class="page-subtitle" data-i18n="skillsSub">Топ-15 навыков по количеству упоминаний</p>
+      <div class="chart-card"><canvas id="skillsChart"></canvas></div>
+    </section>
+
+    <section class="page" id="page-salary">
+      <h1 class="page-title" data-i18n="salaryAnalysis">Анализ зарплат</h1>
+      <p class="page-subtitle" data-i18n="salarySub">Средние зарплаты в KZT по специальностям</p>
+      <div class="chart-card"><canvas id="salaryChart"></canvas></div>
+    </section>
+
+    <section class="page" id="page-jobs">
+      <h1 class="page-title" data-i18n="vacancies">Вакансии</h1>
+      <p class="page-subtitle" data-i18n="jobsSub">Фильтрация и просмотр вакансий</p>
+      <div class="filter-bar"><select id="titleSelect" class="filter-select"><option value="" data-i18n="allTitles">Все должности</option></select><select id="citySelect" class="filter-select"><option value="" data-i18n="allCities">Все города</option></select></div>
+      <div class="results-table"><table><thead><tr><th data-i18n="position">Должность</th><th data-i18n="company">Компания</th><th data-i18n="city">Город</th><th data-i18n="salaryKzt">Зарплата</th><th data-i18n="link">Ссылка</th></tr></thead><tbody id="jobsBody"></tbody></table><div class="pagination"><button class="page-btn" id="prevBtn" onclick="changePage(-1)">←</button><span id="pageInfo" class="page-info">—</span><button class="page-btn" id="nextBtn" onclick="changePage(1)">→</button></div></div>
+    </section>
+
+    <section class="page" id="page-career">
+      <h1 class="page-title">AI Career Assistant</h1>
+      <p class="page-subtitle" data-i18n="careerSub">Напиши свои навыки или загрузи резюме (.txt/.pdf), чтобы получить профессию и подходящие вакансии.</p>
+      <div class="assistant-card">
+        <textarea id="careerText" placeholder="Python, SQL, FastAPI, PostgreSQL, pandas..."></textarea>
+        <div class="upload-row"><input type="file" id="resumeFile" accept=".txt,.pdf"><button class="btn-primary" onclick="runCareerAssistant()" data-i18n="analyze">Анализировать →</button></div>
+      </div>
+      <div id="careerResult"></div>
+    </section>
+
+    <section class="page" id="page-about">
+      <h1 class="page-title" data-i18n="aboutProject">О проекте</h1>
+      <div class="about-grid">
+        <div class="info-card"><h3>Problem</h3><p>Students and junior specialists often do not know which IT profession matches their skills and what skills are demanded in Kazakhstan.</p></div>
+        <div class="info-card"><h3>Objective</h3><p>Analyze IT vacancies, show salary/skill trends, and recommend matching jobs using a career assistant.</p></div>
+        <div class="info-card"><h3>Stack</h3><p>Flask, Pandas, Chart.js, HTML, CSS, JavaScript, CSV dataset, PyPDF2 for optional resume PDF extraction.</p></div>
+        <div class="info-card"><h3>Innovation</h3><p>AI-style assistant: skills/resume → profession → matching vacancies → missing skills to improve.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/script.js"></script>
+  <script>initDashboard();</script>
+</body>
+</html>

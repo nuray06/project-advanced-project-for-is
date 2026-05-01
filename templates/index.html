@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobScope KZ — Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="landing">
+  <nav class="top-nav">
+    <div class="logo">Job<span>Scope</span> KZ</div>
+    <div class="nav-actions">
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      <a href="/dashboard" class="nav-link" data-i18n="openDashboard">Открыть Dashboard →</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="badge" data-i18n="badge">Рынок труда Казахстана</div>
+    <h1><span data-i18n="hero1">Аналитика</span><br><span class="highlight" data-i18n="hero2">IT-вакансий</span><br><span data-i18n="hero3">и AI Career Assistant</span></h1>
+    <p class="subtitle" data-i18n="subtitle">Исследуй зарплаты, навыки, города и получи рекомендацию профессии по своим навыкам или резюме.</p>
+    <a href="/dashboard" class="btn-primary" data-i18n="start">Начать анализ →</a>
+  </section>
+
+  <div class="stats" id="statsGrid">
+    <div class="stat-item"><span class="stat-value" id="statTotal">—</span><span class="stat-label" data-i18n="jobsInBase">Вакансий в базе</span></div>
+    <div class="stat-item"><span class="stat-value" id="statCompanies">—</span><span class="stat-label" data-i18n="companies">Компаний</span></div>
+    <div class="stat-item"><span class="stat-value" id="statAvg">—</span><span class="stat-label" data-i18n="avgSalary">Средняя зарплата</span></div>
+  </div>
+
+  <script src="/static/script.js"></script>
+  <script>
+    loadLandingStats();
+  </script>
+</body>
+</html>
