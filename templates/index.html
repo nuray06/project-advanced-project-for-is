@@ -6,17 +6,32 @@
   <title>JobScope KZ — Analytics</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/auth.css">
 </head>
 <body class="landing">
   <nav class="top-nav">
     <div class="logo">Job<span>Scope</span> KZ</div>
     <div class="nav-actions">
+<<<<<<< HEAD
       <a href="/dashboard" class="nav-link">Open Dashboard →</a>
+=======
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      {% if current_user %}
+        <span class="user-pill">{{ current_user.username }}</span>
+        <form action="/logout" method="post" class="inline-form"><button class="nav-link nav-button" type="submit">Выйти</button></form>
+        <a href="/dashboard" class="nav-link" data-i18n="openDashboard">Открыть Dashboard →</a>
+      {% else %}
+        <a href="/login" class="nav-link">Войти</a>
+        <a href="/register" class="nav-link auth-nav-link">Регистрация</a>
+      {% endif %}
+>>>>>>> e720c41 (added authorization)
     </div>
   </nav>
 
   <section class="hero">
     <div class="hero-glow"></div>
+<<<<<<< HEAD
     <div class="badge">Kazakhstan IT Job Market</div>
     <h1>
       Analytics of<br>
@@ -27,6 +42,12 @@
       Explore salaries, skills, cities, experience levels, and get a profession recommendation based on your resume.
     </p>
     <a href="/dashboard" class="btn-primary">Start Analysis →</a>
+=======
+    <div class="badge" data-i18n="badge">Рынок труда Казахстана</div>
+    <h1><span data-i18n="hero1">Аналитика</span><br><span class="highlight" data-i18n="hero2">IT-вакансий</span><br><span data-i18n="hero3">и AI Career Assistant</span></h1>
+    <p class="subtitle" data-i18n="subtitle">Исследуй зарплаты, навыки, города и получи рекомендацию профессии по своим навыкам или резюме.</p>
+    <a href="{% if current_user %}/dashboard{% else %}/login{% endif %}" class="btn-primary" data-i18n="start">Начать анализ →</a>
+>>>>>>> e720c41 (added authorization)
   </section>
 
   <div class="stats" id="statsGrid">
