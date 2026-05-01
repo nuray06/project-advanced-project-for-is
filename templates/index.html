@@ -6,6 +6,7 @@
   <title>JobScope KZ — Analytics</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/auth.css">
 </head>
 <body class="landing">
   <nav class="top-nav">
@@ -13,7 +14,14 @@
     <div class="nav-actions">
       <button class="lang-btn" onclick="setLang('ru')">RU</button>
       <button class="lang-btn" onclick="setLang('en')">EN</button>
-      <a href="/dashboard" class="nav-link" data-i18n="openDashboard">Открыть Dashboard →</a>
+      {% if current_user %}
+        <span class="user-pill">{{ current_user.username }}</span>
+        <form action="/logout" method="post" class="inline-form"><button class="nav-link nav-button" type="submit">Выйти</button></form>
+        <a href="/dashboard" class="nav-link" data-i18n="openDashboard">Открыть Dashboard →</a>
+      {% else %}
+        <a href="/login" class="nav-link">Войти</a>
+        <a href="/register" class="nav-link auth-nav-link">Регистрация</a>
+      {% endif %}
     </div>
   </nav>
 
@@ -22,7 +30,7 @@
     <div class="badge" data-i18n="badge">Рынок труда Казахстана</div>
     <h1><span data-i18n="hero1">Аналитика</span><br><span class="highlight" data-i18n="hero2">IT-вакансий</span><br><span data-i18n="hero3">и AI Career Assistant</span></h1>
     <p class="subtitle" data-i18n="subtitle">Исследуй зарплаты, навыки, города и получи рекомендацию профессии по своим навыкам или резюме.</p>
-    <a href="/dashboard" class="btn-primary" data-i18n="start">Начать анализ →</a>
+    <a href="{% if current_user %}/dashboard{% else %}/login{% endif %}" class="btn-primary" data-i18n="start">Начать анализ →</a>
   </section>
 
   <div class="stats" id="statsGrid">

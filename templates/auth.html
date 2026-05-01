@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'register' %}Регистрация{% else %}Вход{% endif %} — JobScope KZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/auth.css">
+</head>
+<body class="auth-body">
+  <nav class="top-nav">
+    <a class="logo logo-link" href="/">Job<span>Scope</span> KZ</a>
+    <div class="nav-actions">
+      {% if mode == 'register' %}
+        <a href="/login" class="nav-link">Войти</a>
+      {% else %}
+        <a href="/register" class="nav-link">Создать аккаунт</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="auth-shell">
+    <section class="auth-card">
+      <div class="badge">Личный доступ</div>
+      <h1>{% if mode == 'register' %}Создать аккаунт{% else %}Войти в аккаунт{% endif %}</h1>
+      <p class="auth-subtitle">
+        {% if mode == 'register' %}
+          Зарегистрируйтесь, чтобы открыть dashboard и карьерный ассистент.
+        {% else %}
+          Авторизуйтесь, чтобы продолжить работу с аналитикой вакансий.
+        {% endif %}
+      </p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-list">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form class="auth-form" method="post">
+        <label>
+          <span>Логин</span>
+          <input type="text" name="username" autocomplete="username" minlength="3" required>
+        </label>
+        <label>
+          <span>Пароль</span>
+          <input type="password" name="password" autocomplete="{% if mode == 'register' %}new-password{% else %}current-password{% endif %}" minlength="6" required>
+        </label>
+        {% if mode == 'register' %}
+          <label>
+            <span>Повторите пароль</span>
+            <input type="password" name="confirm_password" autocomplete="new-password" minlength="6" required>
+          </label>
+        {% endif %}
+        <button class="btn-primary" type="submit">
+          {% if mode == 'register' %}Зарегистрироваться{% else %}Войти{% endif %}
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        {% if mode == 'register' %}
+          Уже есть аккаунт? <a href="/login">Войти</a>
+        {% else %}
+          Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+        {% endif %}
+      </p>
+    </section>
+  </main>
+</body>
+</html>
