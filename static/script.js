@@ -1,72 +1,22 @@
-// Skills chart
-fetch('/api/skills')
-  .then(res => res.json())
-  .then(data => {
-    new Chart(document.getElementById('skillsChart'), {
-      type: 'bar',
-      data: {
-        labels: Object.keys(data),
-        datasets: [{
-          label: 'Top Skills',
-          data: Object.values(data)
-        }]
-      }
-    });
-  });
-
-// Salary chart
-fetch('/api/salary')
-  .then(res => res.json())
-  .then(data => {
-    new Chart(document.getElementById('salaryChart'), {
-      type: 'bar',
-      data: {
-        labels: Object.keys(data),
-        datasets: [{
-          label: 'Average Salary',
-          data: Object.values(data)
-        }]
-      }
-    });
-  });
-
-// Populate dropdown
-fetch('/api/salary')
-  .then(res => res.json())
-  .then(data => {
-    const select = document.getElementById('jobSelect');
-    Object.keys(data).forEach(job => {
-      let option = document.createElement('option');
-      option.value = job;
-      option.text = job;
-      select.appendChild(option);
-    });
-  });
-
-// Filter jobs
-document.getElementById('jobSelect').addEventListener('change', function () {
-    fetch(`/api/filter?title=${this.value}`)
-      .then(res => res.json())
-      .then(data => {
-        const list = document.getElementById('results');
-        list.innerHTML = "";
-
-        data.forEach(job => {
-          let li = document.createElement('li');
-          li.textContent = `${job.title} | ${job.company} | ${job.salary} | ${job.city}`;
-          list.appendChild(li);
-        });
-      });
-});
-
-// Classification
-function classify() {
-    const text = document.getElementById("jobText").value;
-
-    fetch(`/api/classify?text=${text}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("prediction").innerText =
-            "Prediction: " + data.prediction;
-      });
-}
+const I18N={ru:{openDashboard:'Открыть Dashboard →',badge:'Рынок труда Казахстана',hero1:'Аналитика',hero2:'IT-вакансий',hero3:'и AI Career Assistant',subtitle:'Исследуй зарплаты, навыки, города и получи рекомендацию профессии по своим навыкам или резюме.',start:'Начать анализ →',jobsInBase:'Вакансий в базе',companies:'Компаний',avgSalary:'Средняя зарплата',overview:'Обзор',skills:'Навыки',salary:'Зарплаты',jobs:'Вакансии',about:'О проекте',backHome:'← На главную',marketOverview:'Обзор рынка',overviewSub:'Ключевые метрики и тренды IT-вакансий',totalJobs:'Всего вакансий',topCity:'Топ город',jobsByCity:'Вакансии по городам',topSkills10:'Топ-10 навыков',salaryQuality:'Качество данных по зарплате',demandedSkills:'Востребованные навыки',skillsSub:'Топ-15 навыков по количеству упоминаний',salaryAnalysis:'Анализ зарплат',salarySub:'Средние зарплаты в KZT по специальностям',vacancies:'Вакансии',jobsSub:'Фильтрация и просмотр вакансий',allTitles:'Все должности',allCities:'Все города',position:'Должность',company:'Компания',city:'Город',salaryKzt:'Зарплата',link:'Ссылка',careerSub:'Напиши свои навыки или загрузи резюме (.txt/.pdf), чтобы получить профессию и подходящие вакансии.',analyze:'Анализировать →',aboutProject:'О проекте'},en:{openDashboard:'Open Dashboard →',badge:'Kazakhstan job market',hero1:'Analytics of',hero2:'IT vacancies',hero3:'and AI Career Assistant',subtitle:'Explore salaries, skills, cities, and get a profession recommendation using your skills or resume.',start:'Start analysis →',jobsInBase:'Jobs in dataset',companies:'Companies',avgSalary:'Average salary',overview:'Overview',skills:'Skills',salary:'Salaries',jobs:'Jobs',about:'About',backHome:'← Home',marketOverview:'Market overview',overviewSub:'Key metrics and IT vacancy trends',totalJobs:'Total jobs',topCity:'Top city',jobsByCity:'Jobs by city',topSkills10:'Top-10 skills',salaryQuality:'Salary data quality',demandedSkills:'In-demand skills',skillsSub:'Top-15 skills by mentions',salaryAnalysis:'Salary analysis',salarySub:'Average salaries in KZT by position',vacancies:'Vacancies',jobsSub:'Filter and view vacancies',allTitles:'All positions',allCities:'All cities',position:'Position',company:'Company',city:'City',salaryKzt:'Salary',link:'Link',careerSub:'Write your skills or upload a resume (.txt/.pdf) to get a profession and matching vacancies.',analyze:'Analyze →',aboutProject:'About project'}};
+let currentLang=localStorage.getItem('lang')||'ru';
+function setLang(lang){currentLang=lang;localStorage.setItem('lang',lang);document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(I18N[lang][key])el.textContent=I18N[lang][key];});}
+function money(v){return v?Math.round(v/1000)+'K ₸':'N/A'}
+function loadLandingStats(){setLang(currentLang);fetch('/api/stats').then(r=>r.json()).then(d=>{statTotal.textContent=d.total_jobs.toLocaleString('ru');statCompanies.textContent=d.unique_companies.toLocaleString('ru');statAvg.textContent=money(d.avg_salary_kzt);});}
+function showPage(e,name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');e.currentTarget.classList.add('active');}
+const chartDefaults={responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a26',titleColor:'#e2e8f0',bodyColor:'#94a3b8',padding:12,cornerRadius:10}}};
+let currentPage=1,currentTitle='',currentCity='',totalPages=1;
+function initDashboard(){setLang(currentLang);loadStats();loadCharts();loadFilters();loadJobs();}
+function loadStats(){fetch('/api/stats').then(r=>r.json()).then(d=>{document.getElementById('kpi-total').textContent=d.total_jobs.toLocaleString('ru');document.getElementById('kpi-companies').textContent=d.unique_companies.toLocaleString('ru');document.getElementById('kpi-avg').textContent=money(d.avg_salary_kzt);document.getElementById('kpi-city').textContent=d.top_city||'—';});}
+function loadCharts(){fetch('/api/cities').then(r=>r.json()).then(data=>new Chart(citiesChart,{type:'doughnut',data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:['#6ee7b7','#818cf8','#fb923c','#f472b6','#38bdf8','#a3e635','#e879f9','#34d399','#60a5fa','#fbbf24'],borderWidth:0}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,legend:{display:true,position:'right',labels:{color:'#94a3b8'}}}}}));
+fetch('/api/skills').then(r=>r.json()).then(data=>{let keys=Object.keys(data).slice(0,10);new Chart(skillsOverviewChart,{type:'bar',data:{labels:keys,datasets:[{data:keys.map(k=>data[k]),backgroundColor:'rgba(129,140,248,.75)',borderRadius:6}]},options:{...chartDefaults,indexAxis:'y',scales:darkScales()}});new Chart(skillsChart,{type:'bar',data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:'rgba(110,231,183,.75)',borderRadius:6}]},options:{...chartDefaults,indexAxis:'y',scales:darkScales()}});});
+fetch('/api/salary').then(r=>r.json()).then(data=>new Chart(salaryChart,{type:'bar',data:{labels:Object.keys(data).map(x=>x.length>38?x.slice(0,38)+'…':x),datasets:[{data:Object.values(data),backgroundColor:'rgba(251,146,60,.75)',borderRadius:6}]},options:{...chartDefaults,indexAxis:'y',scales:darkScales(true)}}));
+fetch('/api/salary-quality').then(r=>r.json()).then(data=>new Chart(salaryQualityChart,{type:'bar',data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:'rgba(110,231,183,.75)',borderRadius:8}]},options:{...chartDefaults,scales:darkScales()}}));}
+function darkScales(moneyTicks=false){return{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:moneyTicks?(v)=>(v/1000).toFixed(0)+'K':undefined}},y:{grid:{display:false},ticks:{color:'#e2e8f0'}}};}
+function loadFilters(){fetch('/api/jobs/list').then(r=>r.json()).then(titles=>{titles.slice(0,120).forEach(t=>{let o=document.createElement('option');o.value=t;o.textContent=t;titleSelect.appendChild(o);});});fetch('/api/cities').then(r=>r.json()).then(cities=>{Object.keys(cities).forEach(c=>{let o=document.createElement('option');o.value=c;o.textContent=c;citySelect.appendChild(o);});});titleSelect.addEventListener('change',function(){currentTitle=this.value;currentPage=1;loadJobs();});citySelect.addEventListener('change',function(){currentCity=this.value;currentPage=1;loadJobs();});}
+function loadJobs(){let params=new URLSearchParams({page:currentPage});if(currentTitle)params.append('title',currentTitle);if(currentCity)params.append('city',currentCity);fetch('/api/filter?'+params).then(r=>r.json()).then(d=>{totalPages=d.pages||1;if(!d.jobs.length){jobsBody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:35px">No jobs found</td></tr>';return;}jobsBody.innerHTML=d.jobs.map(j=>`<tr><td>${escapeHtml(j.title)}</td><td>${escapeHtml(j.company)}</td><td>${escapeHtml(j.city)}</td><td><span class="salary-badge">${j.salary}</span></td><td>${j.url?`<a class="job-link" target="_blank" href="${j.url}">open →</a>`:'—'}</td></tr>`).join('');pageInfo.textContent=`${currentPage} / ${totalPages} (${d.total})`;prevBtn.disabled=currentPage<=1;nextBtn.disabled=currentPage>=totalPages;});}
+function changePage(dir){currentPage=Math.max(1,Math.min(totalPages,currentPage+dir));loadJobs();}
+function runCareerAssistant(){const form=new FormData();form.append('text',document.getElementById('careerText').value);const f=document.getElementById('resumeFile').files[0];if(f)form.append('resume',f);careerResult.innerHTML='<p class="page-subtitle">Analyzing...</p>';fetch('/api/career-assistant',{method:'POST',body:form}).then(r=>r.json()).then(renderCareerResult).catch(()=>careerResult.innerHTML='<p>Error. Please try again.</p>');}
+function renderCareerResult(d){const skillTags=(d.detected_skills||[]).map(s=>`<span class="tag">${escapeHtml(s)}</span>`).join('')||'<span class="tag orange">No exact skills detected, but recommendation is still generated</span>';const improve=(d.skills_to_improve||[]).map(s=>`<span class="tag orange">${escapeHtml(s)}</span>`).join('')||'<span class="tag">Good starting profile</span>';const jobs=(d.matching_vacancies||[]).map(j=>`<div class="job-card"><h3>${escapeHtml(j.title)}</h3><div class="job-meta">${escapeHtml(j.company)} • ${escapeHtml(j.city)} • <span class="salary-badge">${j.salary}</span></div><p class="job-desc">${escapeHtml(j.description)}</p><div><b>Matched:</b> ${(j.matched_skills||[]).map(s=>`<span class="tag">${escapeHtml(s)}</span>`).join('')||'—'}</div><div><b>Improve:</b> ${(j.skills_to_improve||[]).map(s=>`<span class="tag orange">${escapeHtml(s)}</span>`).join('')||'—'}</div>${j.url?`<p><a class="job-link" target="_blank" href="${j.url}">Open vacancy →</a></p>`:''}</div>`).join('');careerResult.innerHTML=`<div class="career-summary"><div class="summary-card"><h3>Recommended profession</h3><p class="kpi-value small">${escapeHtml(d.recommended_profession)}</p><p class="job-meta">Confidence: ${d.confidence}%</p></div><div class="summary-card"><h3>Detected skills</h3>${skillTags}</div><div class="summary-card"><h3>Skills to improve</h3>${improve}</div></div><h2 class="page-title">Matching vacancies</h2><div class="job-grid">${jobs}</div>`;}
+function escapeHtml(str){return String(str||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+document.addEventListener('DOMContentLoaded',()=>setLang(currentLang));

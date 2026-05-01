@@ -1,27 +1,37 @@
 from flask import Flask, render_template, jsonify, request
 import pandas as pd
+import re
+from html import unescape
+from io import BytesIO
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB resume limit
 
+# -----------------------------
+# Data loading and preprocessing
+# -----------------------------
 df = pd.read_csv("jobs.csv")
-
-# --- Очистка данных ---
 df.rename(columns={"name": "title"}, inplace=True)
 
-# Средняя зарплата
-df["salary"] = (df["salary_from"] + df["salary_to"]) / 2
-df["salary"] = df["salary"].fillna(df["salary_from"])
-df["salary"] = df["salary"].fillna(df["salary_to"])
+for col in ["title", "company", "city", "description", "skills", "url", "currency"]:
+    if col not in df.columns:
+        df[col] = ""
 
-# Нормализация навыков: убираем пробелы
+# Average salary from salary_from/salary_to
+salary_from = pd.to_numeric(df.get("salary_from"), errors="coerce")
+salary_to = pd.to_numeric(df.get("salary_to"), errors="coerce")
+df["salary"] = (salary_from + salary_to) / 2
+df["salary"] = df["salary"].fillna(salary_from).fillna(salary_to)
+
+# Fill empty values
 df["skills"] = df["skills"].fillna("")
-
-# Нормализация города
+df["description"] = df["description"].fillna("")
 df["city"] = df["city"].fillna("Не указан")
 df["title"] = df["title"].fillna("Без названия")
 df["company"] = df["company"].fillna("Не указана")
+df["url"] = df["url"].fillna("")
 
-# Конвертация зарплат в KZT (приблизительно)
+# Salary currency conversion to KZT
 RUB_TO_KZT = 5.5
 USD_TO_KZT = 450
 
@@ -30,33 +40,197 @@ def to_kzt(row):
     currency = str(row.get("currency", "KZT")).upper()
     if pd.isna(salary):
         return None
-    if currency == "RUR" or currency == "RUB":
+    if currency in ["RUR", "RUB"]:
         return salary * RUB_TO_KZT
-    elif currency == "USD":
+    if currency == "USD":
         return salary * USD_TO_KZT
-    return salary  # уже KZT
+    return salary
 
 df["salary_kzt"] = df.apply(to_kzt, axis=1)
 
+# Clean HTML from descriptions for better matching and display
+def clean_text(value):
+    text = str(value or "")
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
+df["description_clean"] = df["description"].apply(clean_text)
+df["search_text"] = (
+    df["title"].astype(str) + " " +
+    df["company"].astype(str) + " " +
+    df["city"].astype(str) + " " +
+    df["description_clean"].astype(str) + " " +
+    df["skills"].astype(str)
+).str.lower()
+
+# -----------------------------
+# Career assistant configuration
+# -----------------------------
+CAREER_PROFILES = {
+    "Data Analyst": ["sql", "excel", "power bi", "tableau", "python", "pandas", "analytics", "аналитик", "data", "dashboard", "bi"],
+    "Data Scientist / ML Engineer": ["machine learning", "ml", "pytorch", "tensorflow", "sklearn", "scikit", "nlp", "computer vision", "bert", "model", "нейрон", "statistics"],
+    "Backend Developer": ["python", "java", "spring", "fastapi", "django", "flask", "node", "api", "rest", "postgresql", "mysql", "sql", "backend", "бэкенд"],
+    "Frontend Developer": ["html", "css", "javascript", "typescript", "react", "vue", "angular", "frontend", "фронтенд", "ui"],
+    "DevOps Engineer": ["docker", "kubernetes", "linux", "ci/cd", "jenkins", "terraform", "ansible", "nginx", "devops", "cloud"],
+    "QA Engineer": ["qa", "testing", "selenium", "test", "автотест", "postman", "pytest", "quality assurance"],
+    "Mobile Developer": ["android", "ios", "kotlin", "swift", "flutter", "react native", "mobile", "мобильн"],
+    "Cybersecurity Specialist": ["security", "cybersecurity", "owasp", "pentest", "siem", "безопасность", "кибербезопасность"],
+    "Project / Product Manager": ["product", "project", "agile", "scrum", "jira", "manager", "requirements", "roadmap", "аналитик", "бизнес"]
+}
+
+ALL_SKILLS = sorted(set(skill for skills in CAREER_PROFILES.values() for skill in skills))
+
+
+def normalize_words(text):
+    return re.findall(r"[a-zA-Zа-яА-Я0-9+#./-]+", str(text).lower())
+
+
+def extract_resume_text(file_storage):
+    if not file_storage or not file_storage.filename:
+        return ""
+    filename = file_storage.filename.lower()
+    raw = file_storage.read()
+
+    if filename.endswith(".txt"):
+        return raw.decode("utf-8", errors="ignore")
+
+    if filename.endswith(".pdf"):
+        # Optional PDF support. Install PyPDF2 if needed: pip install PyPDF2
+        try:
+            from PyPDF2 import PdfReader
+            reader = PdfReader(BytesIO(raw))
+            pages = []
+            for page in reader.pages:
+                pages.append(page.extract_text() or "")
+            return "\n".join(pages)
+        except Exception:
+            return "PDF uploaded, but text could not be extracted. Please upload a text-based PDF or paste your skills."
+
+    return raw.decode("utf-8", errors="ignore")
+
+
+def detect_skills(text):
+    text_lower = str(text).lower()
+    detected = []
+    for skill in ALL_SKILLS:
+        if skill in text_lower:
+            detected.append(skill)
+    return sorted(set(detected))
+
+
+def recommend_profession(text):
+    text_lower = str(text).lower()
+    scores = {}
+    for profession, keywords in CAREER_PROFILES.items():
+        score = 0
+        for kw in keywords:
+            if kw in text_lower:
+                score += 2 if " " in kw else 1
+        scores[profession] = score
+
+    best_profession = max(scores, key=scores.get)
+    best_score = scores[best_profession]
+
+    # Never return only "Other". If user gives very few skills, use broad safe recommendation.
+    if best_score == 0:
+        best_profession = "Junior IT Specialist"
+        confidence = 25
+    else:
+        max_possible = max(len(CAREER_PROFILES[best_profession]), 1)
+        confidence = min(95, max(35, round((best_score / max_possible) * 100)))
+
+    return best_profession, confidence, scores
+
+
+def format_salary(value):
+    if pd.isna(value) or value is None:
+        return "Не указана"
+    return f"{int(value):,} ₸".replace(",", " ")
+
+
+def match_jobs(text, limit=8):
+    words = set(normalize_words(text))
+    detected = set(detect_skills(text))
+    profession, _, _ = recommend_profession(text)
+    profile_skills = set(CAREER_PROFILES.get(profession, []))
+    important = words | detected | profile_skills
+
+    if not important:
+        important = {"junior", "стажер", "разработчик", "аналитик", "developer"}
+
+    def score_row(row):
+        search_text = row["search_text"]
+        score = 0
+        matched = []
+        for token in important:
+            if token and token in search_text:
+                score += 1
+                if token in ALL_SKILLS:
+                    matched.append(token)
+        # Give extra score if profession title is close to vacancy title
+        title_lower = str(row["title"]).lower()
+        for part in profession.lower().split("/"):
+            for word in part.split():
+                if len(word) > 2 and word in title_lower:
+                    score += 2
+        return score, sorted(set(matched))
+
+    rows = []
+    for idx, row in df.iterrows():
+        score, matched = score_row(row)
+        if score > 0:
+            rows.append((score, matched, row))
+
+    # If no exact match, still return useful popular jobs with salary/city info
+    if not rows:
+        fallback = df.copy()
+        fallback["salary_sort"] = fallback["salary_kzt"].fillna(0)
+        rows = [(1, [], row) for _, row in fallback.sort_values("salary_sort", ascending=False).head(limit).iterrows()]
+
+    rows = sorted(rows, key=lambda x: (x[0], 0 if pd.isna(x[2]["salary_kzt"]) else x[2]["salary_kzt"]), reverse=True)[:limit]
+
+    results = []
+    for score, matched, row in rows:
+        required_text = (str(row.get("skills", "")) + " " + str(row.get("description_clean", ""))).lower()
+        required_found = [s for s in ALL_SKILLS if s in required_text]
+        skills_to_improve = sorted(set(required_found) - detected)[:6]
+        results.append({
+            "title": row["title"],
+            "company": row["company"],
+            "city": row["city"],
+            "salary": format_salary(row["salary_kzt"]),
+            "url": row.get("url", ""),
+            "description": row["description_clean"][:380] + ("..." if len(row["description_clean"]) > 380 else ""),
+            "matched_skills": matched[:8],
+            "skills_to_improve": skills_to_improve,
+            "match_score": int(score)
+        })
+    return results
+
+
+# -----------------------------
+# Pages
+# -----------------------------
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
 
 
+# -----------------------------
+# Existing analytics API
+# -----------------------------
 @app.route("/api/skills")
 def skills():
-    skills = df["skills"].str.split(",").explode()
-    skills = skills.str.strip().str.lower()
-    skills = skills[skills != ""]
-    top = skills.value_counts().head(15).to_dict()
-    return jsonify(top)
-
+    skills_series = df["skills"].str.split(",").explode().fillna("")
+    skills_series = skills_series.str.strip().str.lower()
+    skills_series = skills_series[skills_series != ""]
+    return jsonify(skills_series.value_counts().head(15).to_dict())
 
 @app.route("/api/salary")
 def salary():
@@ -72,12 +246,15 @@ def salary():
     )
     return jsonify(avg_salary)
 
+@app.route("/api/salary-quality")
+def salary_quality():
+    with_salary = int(df["salary_kzt"].notna().sum())
+    without_salary = int(df["salary_kzt"].isna().sum())
+    return jsonify({"With salary": with_salary, "Without salary": without_salary})
 
 @app.route("/api/cities")
 def cities():
-    city_counts = df["city"].value_counts().head(10).to_dict()
-    return jsonify(city_counts)
-
+    return jsonify(df["city"].value_counts().head(10).to_dict())
 
 @app.route("/api/stats")
 def stats():
@@ -86,15 +263,14 @@ def stats():
     avg_salary = df["salary_kzt"].mean()
     top_city = df["city"].value_counts().idxmax()
     unique_companies = df["company"].nunique()
-
     return jsonify({
         "total_jobs": total,
         "jobs_with_salary": with_salary,
+        "jobs_without_salary": total - with_salary,
         "avg_salary_kzt": round(avg_salary, 0) if pd.notna(avg_salary) else None,
         "top_city": top_city,
         "unique_companies": unique_companies,
     })
-
 
 @app.route("/api/filter")
 def filter_jobs():
@@ -110,13 +286,11 @@ def filter_jobs():
         filtered = filtered[filtered["city"] == city]
 
     total = len(filtered)
-    filtered = filtered.iloc[(page - 1) * per_page : page * per_page]
+    filtered = filtered.iloc[(page - 1) * per_page: page * per_page]
 
     result = filtered[["title", "company", "salary_kzt", "city", "url"]].copy()
     result = result.rename(columns={"salary_kzt": "salary"})
-    result["salary"] = result["salary"].apply(
-        lambda x: f"{int(x):,} ₸" if pd.notna(x) else "Не указана"
-    )
+    result["salary"] = result["salary"].apply(format_salary)
 
     return jsonify({
         "jobs": result.to_dict(orient="records"),
@@ -125,40 +299,42 @@ def filter_jobs():
         "pages": (total + per_page - 1) // per_page,
     })
 
-
 @app.route("/api/jobs/list")
 def jobs_list():
-    titles = sorted(df["title"].dropna().unique().tolist())
-    return jsonify(titles)
+    return jsonify(sorted(df["title"].dropna().unique().tolist()))
 
+# -----------------------------
+# New AI Career Assistant API
+# -----------------------------
+@app.route("/api/career-assistant", methods=["POST"])
+def career_assistant():
+    typed_text = request.form.get("text", "")
+    resume_text = extract_resume_text(request.files.get("resume"))
+    combined_text = (typed_text + "\n" + resume_text).strip()
 
+    if not combined_text:
+        combined_text = "junior it python sql html css"
+
+    profession, confidence, scores = recommend_profession(combined_text)
+    detected = detect_skills(combined_text)
+    profile = CAREER_PROFILES.get(profession, [])
+    missing_profile_skills = sorted(set(profile) - set(detected))[:8]
+
+    return jsonify({
+        "recommended_profession": profession,
+        "confidence": confidence,
+        "detected_skills": detected[:20],
+        "skills_to_improve": missing_profile_skills,
+        "matching_vacancies": match_jobs(combined_text, limit=8),
+        "note": "This is a rule-based AI assistant: it compares your skills/resume with real vacancy text from the dataset."
+    })
+
+# Backward compatibility with old classifier button
 @app.route("/api/classify")
 def classify():
-    text = request.args.get("text", "").lower()
-
-    categories = {
-        "Data Science / ML": ["machine learning", "data science", "data analyst", "pandas", "numpy", "tensorflow", "pytorch", "sklearn", "нейронн", "ml", "аналитик данных"],
-        "Frontend": ["react", "javascript", "typescript", "vue", "angular", "css", "html", "frontend", "фронтенд"],
-        "Backend": ["django", "fastapi", "flask", "backend", "бэкенд", "python", "node.js", "java", "golang", "rest api"],
-        "DevOps": ["devops", "kubernetes", "docker", "ci/cd", "terraform", "ansible", "jenkins"],
-        "Mobile": ["android", "ios", "swift", "kotlin", "flutter", "react native", "мобильн"],
-        "QA": ["qa", "тестировщик", "selenium", "testing", "автотест"],
-        "Security": ["безопасность", "cybersecurity", "кибербезопасность", "owasp", "pentest"],
-    }
-
-    scores = {}
-    for category, keywords in categories.items():
-        score = sum(1 for kw in keywords if kw in text)
-        if score > 0:
-            scores[category] = score
-
-    if scores:
-        result = max(scores, key=scores.get)
-    else:
-        result = "Другое"
-
-    return jsonify({"prediction": result})
-
+    text = request.args.get("text", "")
+    profession, confidence, _ = recommend_profession(text)
+    return jsonify({"prediction": profession, "confidence": confidence})
 
 if __name__ == "__main__":
     app.run(debug=True)
