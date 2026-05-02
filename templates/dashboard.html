@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,82 +8,267 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body class="app-body">
   <aside class="sidebar">
     <div class="sidebar-logo">Job<span>Scope</span> KZ</div>
+
     <nav>
-      <div class="nav-item active" onclick="showPage(event,'overview')"><span data-i18n="overview">Обзор</span></div>
-      <div class="nav-item" onclick="showPage(event,'skills')"><span data-i18n="skills">Навыки</span></div>
-      <div class="nav-item" onclick="showPage(event,'salary')"><span data-i18n="salary">Зарплаты</span></div>
-      <div class="nav-item" onclick="showPage(event,'jobs')"><span data-i18n="jobs">Вакансии</span></div>
-      <div class="nav-item" onclick="showPage(event,'career')"><span>AI Career Assistant</span></div>
-      <div class="nav-item" onclick="showPage(event,'about')"><span data-i18n="about">О проекте</span></div>
+      <div class="nav-item active" onclick="showPage(event,'overview')">
+        <span>Overview</span>
+      </div>
+
+      <div class="nav-item" onclick="showPage(event,'characteristics')">
+        <span>Characteristics</span>
+      </div>
+
+      <div class="nav-item" onclick="showPage(event,'jobs')">
+        <span>Jobs</span>
+      </div>
+
+      <div class="nav-item" onclick="showPage(event,'career')">
+        <span>AI Career Assistant</span>
+      </div>
+
+      <div class="nav-item" onclick="showPage(event,'about')">
+        <span>About</span>
+      </div>
     </nav>
+
     <div class="sidebar-footer">
-      <button class="lang-btn" onclick="setLang('ru')">RU</button>
-      <button class="lang-btn" onclick="setLang('en')">EN</button>
-      <a href="/" class="back-link" data-i18n="backHome">← На главную</a>
+      <a href="/" class="back-link">← Home</a>
     </div>
   </aside>
 
   <main class="main">
     <section class="page active" id="page-overview">
-      <h1 class="page-title" data-i18n="marketOverview">Обзор рынка</h1>
-      <p class="page-subtitle" data-i18n="overviewSub">Ключевые метрики и тренды IT-вакансий</p>
+      <h1 class="page-title">Market Overview</h1>
+      <p class="page-subtitle">Key metrics and trends of IT vacancies in Kazakhstan</p>
+
       <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label" data-i18n="totalJobs">Всего вакансий</div><div class="kpi-value" id="kpi-total">—</div></div>
-        <div class="kpi-card"><div class="kpi-label" data-i18n="companies">Компаний</div><div class="kpi-value purple" id="kpi-companies">—</div></div>
-        <div class="kpi-card"><div class="kpi-label" data-i18n="avgSalary">Средняя зарплата</div><div class="kpi-value" id="kpi-avg">—</div></div>
-        <div class="kpi-card"><div class="kpi-label" data-i18n="topCity">Топ город</div><div class="kpi-value orange small" id="kpi-city">—</div></div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total jobs</div>
+          <div class="kpi-value" id="kpi-total">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Companies</div>
+          <div class="kpi-value purple" id="kpi-companies">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Average salary</div>
+          <div class="kpi-value" id="kpi-avg">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Top city</div>
+          <div class="kpi-value orange small" id="kpi-city">—</div>
+        </div>
       </div>
+
       <div class="charts-grid">
-        <div class="chart-card"><div class="chart-title">🏙️ <span data-i18n="jobsByCity">Вакансии по городам</span></div><canvas id="citiesChart"></canvas></div>
-        <div class="chart-card"><div class="chart-title">⚡ <span data-i18n="topSkills10">Топ-10 навыков</span></div><canvas id="skillsOverviewChart"></canvas></div>
-        <div class="chart-card full"><div class="chart-title">✅ <span data-i18n="salaryQuality">Качество данных по зарплате</span></div><canvas id="salaryQualityChart"></canvas></div>
+        <div class="chart-card">
+          <div class="chart-title">Jobs by city</div>
+          <canvas id="citiesChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Top-10 skills</div>
+          <canvas id="skillsOverviewChart"></canvas>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Salary data quality</div>
+          <canvas id="salaryQualityChart"></canvas>
+        </div>
       </div>
     </section>
 
-    <section class="page" id="page-skills">
-      <h1 class="page-title" data-i18n="demandedSkills">Востребованные навыки</h1>
-      <p class="page-subtitle" data-i18n="skillsSub">Топ-15 навыков по количеству упоминаний</p>
-      <div class="chart-card"><canvas id="skillsChart"></canvas></div>
-    </section>
+    <section class="page" id="page-characteristics">
+      <h1 class="page-title">Characteristics</h1>
+      <p class="page-subtitle">Skills, salaries, work format, and experience levels in IT vacancies</p>
 
-    <section class="page" id="page-salary">
-      <h1 class="page-title" data-i18n="salaryAnalysis">Анализ зарплат</h1>
-      <p class="page-subtitle" data-i18n="salarySub">Средние зарплаты в KZT по специальностям</p>
-      <div class="chart-card"><canvas id="salaryChart"></canvas></div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Junior Accessibility Index</div>
+          <div class="kpi-value small" id="charJuniorIndex">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Remote Flexibility</div>
+          <div class="kpi-value small purple" id="charRemoteFlexibility">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Salary Transparency Score</div>
+          <div class="kpi-value small" id="charSalaryTransparency">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Skills Density</div>
+          <div class="kpi-value small orange" id="charSkillsDensity">—</div>
+        </div>
+      </div>
+
+      <div class="characteristics-grid">
+        <div class="chart-card full">
+          <div class="chart-title">Skills</div>
+          <p class="section-note">Top-15 skills by number of mentions in vacancies</p>
+          <canvas id="skillsChart"></canvas>
+
+          <div class="inside-analytics-block">
+            <div class="inside-analytics-header">
+              <h3>Skill Clusters</h3>
+              <p>Choose a skill and see which skills most often appear together with it.</p>
+            </div>
+
+            <div class="analytics-control-row">
+              <select id="clusterSkillSelect" class="filter-select"></select>
+              <button class="btn-primary small-btn" onclick="loadSkillClusters()">Analyze →</button>
+            </div>
+
+            <div id="clusterInsight" class="insight-box"></div>
+            <canvas id="skillClusterChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Salaries</div>
+          <p class="section-note">Average salaries in KZT by position</p>
+          <canvas id="salaryChart"></canvas>
+        </div>
+
+        <div class="two-chart-row">
+          <div class="chart-card">
+            <div class="chart-title">Employment Type Distribution</div>
+            <p class="section-note">
+              Shows how vacancies are distributed by employment type: full-time, part-time, project work, internship, and other categories.
+            </p>
+            <canvas id="employmentChart"></canvas>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-title">Work Schedule Distribution</div>
+            <p class="section-note">
+              Shows the most common work formats: full day, remote, hybrid, flexible, shift, and rotational schedules.
+            </p>
+            <canvas id="scheduleChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Experience Level Distribution</div>
+          <p class="section-note">
+            Shows which experience levels appear most often in IT vacancy titles.
+          </p>
+          <canvas id="experienceChart"></canvas>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Average Salary by Experience Level</div>
+          <p class="section-note">
+            Compares average salary in KZT for Junior, Middle, Senior, and other levels.
+          </p>
+          <canvas id="experienceSalaryChart"></canvas>
+        </div>
+      </div>
     </section>
 
     <section class="page" id="page-jobs">
-      <h1 class="page-title" data-i18n="vacancies">Вакансии</h1>
-      <p class="page-subtitle" data-i18n="jobsSub">Фильтрация и просмотр вакансий</p>
-      <div class="filter-bar"><select id="titleSelect" class="filter-select"><option value="" data-i18n="allTitles">Все должности</option></select><select id="citySelect" class="filter-select"><option value="" data-i18n="allCities">Все города</option></select></div>
-      <div class="results-table"><table><thead><tr><th data-i18n="position">Должность</th><th data-i18n="company">Компания</th><th data-i18n="city">Город</th><th data-i18n="salaryKzt">Зарплата</th><th data-i18n="link">Ссылка</th></tr></thead><tbody id="jobsBody"></tbody></table><div class="pagination"><button class="page-btn" id="prevBtn" onclick="changePage(-1)">←</button><span id="pageInfo" class="page-info">—</span><button class="page-btn" id="nextBtn" onclick="changePage(1)">→</button></div></div>
+      <h1 class="page-title">Vacancies</h1>
+      <p class="page-subtitle">Filter and explore real IT vacancies from the dataset</p>
+
+      <div class="filter-bar">
+        <select id="titleSelect" class="filter-select">
+          <option value="">All positions</option>
+        </select>
+
+        <select id="citySelect" class="filter-select">
+          <option value="">All cities</option>
+        </select>
+      </div>
+
+      <div class="results-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>Company</th>
+              <th>City</th>
+              <th>Salary</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+
+          <tbody id="jobsBody"></tbody>
+        </table>
+
+        <div class="pagination">
+          <button class="page-btn" id="prevBtn" onclick="changePage(-1)">←</button>
+          <span id="pageInfo" class="page-info">—</span>
+          <button class="page-btn" id="nextBtn" onclick="changePage(1)">→</button>
+        </div>
+      </div>
     </section>
 
     <section class="page" id="page-career">
       <h1 class="page-title">AI Career Assistant</h1>
-      <p class="page-subtitle" data-i18n="careerSub">Напиши свои навыки или загрузи резюме (.txt/.pdf), чтобы получить профессию и подходящие вакансии.</p>
+      <p class="page-subtitle">
+        Upload your resume (.txt/.pdf) to get a profession recommendation, skill gap analysis, salary prediction, and matching vacancies.
+      </p>
+
       <div class="assistant-card">
-        <textarea id="careerText" placeholder="Python, SQL, FastAPI, PostgreSQL, pandas..."></textarea>
-        <div class="upload-row"><input type="file" id="resumeFile" accept=".txt,.pdf"><button class="btn-primary" onclick="runCareerAssistant()" data-i18n="analyze">Анализировать →</button></div>
+        <div class="custom-upload">
+          <input type="file" id="resumeFile" accept=".txt,.pdf" hidden>
+
+          <button type="button" class="file-choose-btn" onclick="document.getElementById('resumeFile').click()">
+            Choose file
+          </button>
+
+          <span id="resumeFileName" class="file-name">No file selected</span>
+
+          <button type="button" id="clearResumeBtn" class="clear-file-btn" onclick="clearResumeFile()" title="Remove file">
+            ×
+          </button>
+
+          <button class="btn-primary analyze-btn" onclick="runCareerAssistant()">Analyze →</button>
+        </div>
       </div>
+
       <div id="careerResult"></div>
     </section>
 
     <section class="page" id="page-about">
-      <h1 class="page-title" data-i18n="aboutProject">О проекте</h1>
+      <h1 class="page-title">About Project</h1>
+
       <div class="about-grid">
-        <div class="info-card"><h3>Problem</h3><p>Students and junior specialists often do not know which IT profession matches their skills and what skills are demanded in Kazakhstan.</p></div>
-        <div class="info-card"><h3>Objective</h3><p>Analyze IT vacancies, show salary/skill trends, and recommend matching jobs using a career assistant.</p></div>
-        <div class="info-card"><h3>Stack</h3><p>Flask, Pandas, Chart.js, HTML, CSS, JavaScript, CSV dataset, PyPDF2 for optional resume PDF extraction.</p></div>
-        <div class="info-card"><h3>Innovation</h3><p>AI-style assistant: skills/resume → profession → matching vacancies → missing skills to improve.</p></div>
+        <div class="info-card">
+          <h3>Problem</h3>
+          <p>Students and junior specialists often do not know which IT profession matches their skills and what skills are demanded in Kazakhstan.</p>
+        </div>
+
+        <div class="info-card">
+          <h3>Objective</h3>
+          <p>Analyze IT vacancies, show salary/skill trends, and recommend matching jobs using an AI-style career assistant.</p>
+        </div>
+
+        <div class="info-card">
+          <h3>Stack</h3>
+          <p>Flask, Pandas, Chart.js, HTML, CSS, JavaScript, CSV dataset, PyPDF2, and lightweight TF-IDF similarity logic.</p>
+        </div>
+
+        <div class="info-card">
+          <h3>Innovation</h3>
+          <p>AI-style assistant: resume → profession prediction → skill gap → salary prediction → matching vacancies.</p>
+        </div>
       </div>
     </section>
   </main>
 
   <script src="/static/script.js"></script>
-  <script>initDashboard();</script>
+  <script>
+    initDashboard();
+  </script>
 </body>
 </html>
