@@ -81,10 +81,6 @@ let skillClusterChartInstance = null;
 
 const chartStore = {};
 
-/* =========================
-   LANGUAGE
-========================= */
-
 function setLang(lang = 'en') {
   currentLang = 'en';
   localStorage.setItem('lang', 'en');
@@ -116,10 +112,6 @@ function updateOverviewProfessionLanguage() {
     }
   }
 }
-
-/* =========================
-   HELPERS
-========================= */
 
 function money(value) {
   if (!value) {
@@ -246,10 +238,6 @@ function getOverviewQuery() {
 
   return params.toString();
 }
-
-/* =========================
-   MAP HELPERS
-========================= */
 
 const REGION_LABELS = {
   'west kazakhstan': { lat: 51.2, lon: 51.4, text: 'Oral' },
@@ -444,12 +432,12 @@ function renderKazakhstanMap(regionJobs) {
         text: hoverText,
         hovertemplate: '%{text}<extra></extra>',
         colorscale: [
-          [0, '#eef7f1'],
-          [0.15, '#c8f2d7'],
-          [0.35, '#83e6a7'],
-          [0.55, '#38c976'],
-          [0.75, '#119653'],
-          [1, '#064e3b']
+          [0,    '#eff6ff'],
+          [0.15, '#bfdbfe'],
+          [0.35, '#60a5fa'],
+          [0.55, '#2563eb'],
+          [0.75, '#1d4ed8'],
+          [1,    '#1e3a8a']
         ],
         zmin: 0,
         zmax: maxJobs,
@@ -526,10 +514,6 @@ function renderKazakhstanMap(regionJobs) {
     });
 }
 
-/* =========================
-   DESTROY OVERVIEW
-========================= */
-
 function destroyOverviewCharts() {
   const mapElement = getMapElement();
 
@@ -553,10 +537,6 @@ function destroyOverviewCharts() {
     companiesOverviewChartInstance = null;
   }
 }
-
-/* =========================
-   LANDING
-========================= */
 
 function loadLandingStats() {
   setLang('en');
@@ -585,10 +565,6 @@ function loadLandingStats() {
     });
 }
 
-/* =========================
-   DASHBOARD INIT
-========================= */
-
 function initDashboard() {
   setLang('en');
   loadOverviewProfessionFilter();
@@ -600,10 +576,6 @@ function initDashboard() {
   loadSkillAnalyticsOptions();
   setupResumeUpload();
 }
-
-/* =========================
-   PAGE SWITCHING
-========================= */
 
 function showPage(event, name) {
   document.querySelectorAll('.page').forEach((page) => {
@@ -624,10 +596,6 @@ function showPage(event, name) {
     event.currentTarget.classList.add('active');
   }
 }
-
-/* =========================
-   OVERVIEW FILTER
-========================= */
 
 function loadOverviewProfessionFilter() {
   const button = document.getElementById('overviewProfessionBtn');
@@ -707,10 +675,6 @@ document.addEventListener('click', function (event) {
   }
 });
 
-/* =========================
-   STATS
-========================= */
-
 function loadStats() {
   const query = getOverviewQuery();
   const url = query ? '/api/stats?' + query : '/api/stats';
@@ -743,10 +707,6 @@ function loadStats() {
       console.error('Stats error:', error);
     });
 }
-
-/* =========================
-   CHARTS
-========================= */
 
 function loadCharts() {
   loadOverviewChartsOnly();
@@ -1031,10 +991,6 @@ function loadOverviewChartsOnly() {
   }
 }
 
-/* =========================
-   CHARACTERISTICS
-========================= */
-
 function loadCharacteristicsKPIs() {
   fetch('/api/characteristics-kpis')
     .then((response) => response.json())
@@ -1166,10 +1122,6 @@ function loadSimpleBar(url, canvasId, instanceName, moneyTicks = false) {
       console.log(`Could not load ${canvasId}`);
     });
 }
-
-/* =========================
-   JOBS FILTERS
-========================= */
 
 function loadFilters() {
   const titleSelect = document.getElementById('titleSelect');
@@ -1338,10 +1290,6 @@ function changePage(direction) {
   loadJobs();
 }
 
-/* =========================
-   SKILL CLUSTERS
-========================= */
-
 function loadSkillAnalyticsOptions() {
   const select = document.getElementById('clusterSkillSelect');
   const insight = document.getElementById('clusterInsight');
@@ -1481,10 +1429,6 @@ function loadSkillClusters() {
       console.log('Could not load skill clusters');
     });
 }
-
-/* =========================
-   CAREER ASSISTANT
-========================= */
 
 function setupResumeUpload() {
   const fileInput = document.getElementById('resumeFile');
