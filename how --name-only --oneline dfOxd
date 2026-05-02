@@ -1,0 +1,14 @@
+[33me720c41[m added authorization
+.env.example
+.gitignore
+app.py
+data_cleaning.ipynb
+docker-compose.yml
+hh_kz_almatyvacancies_.csv
+hh_kz_astanavacancies.csv
+jobs.csv
+requirements.txt
+static/auth.css
+templates/auth.html
+templates/dashboard.html
+templates/index.html
