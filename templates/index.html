@@ -3,73 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JobScope KZ — Analytics</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <title>JobScope KZ</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/auth.css">
 </head>
+
 <body class="landing">
-  <nav class="top-nav">
+
+  <header class="top-nav">
     <div class="logo">Job<span>Scope</span> KZ</div>
+
     <div class="nav-actions">
-<<<<<<< HEAD
-      <a href="/dashboard" class="nav-link">Open Dashboard →</a>
-=======
-      <button class="lang-btn" onclick="setLang('ru')">RU</button>
-      <button class="lang-btn" onclick="setLang('en')">EN</button>
       {% if current_user %}
         <span class="user-pill">{{ current_user.username }}</span>
-        <form action="/logout" method="post" class="inline-form"><button class="nav-link nav-button" type="submit">Выйти</button></form>
-        <a href="/dashboard" class="nav-link" data-i18n="openDashboard">Открыть Dashboard →</a>
+
+        <a href="/dashboard" class="nav-link" data-i18n="openDashboard">
+          Open Dashboard →
+        </a>
+
+        <form action="/logout" method="post" class="inline-form">
+          <button class="nav-link nav-button" type="submit">
+            Logout
+          </button>
+        </form>
       {% else %}
-        <a href="/login" class="nav-link">Войти</a>
-        <a href="/register" class="nav-link auth-nav-link">Регистрация</a>
+        <a href="/login" class="nav-link">
+          Login
+        </a>
+
+        <a href="/register" class="nav-link auth-nav-link">
+          Register
+        </a>
       {% endif %}
->>>>>>> e720c41 (added authorization)
     </div>
-  </nav>
+  </header>
 
-  <section class="hero">
-    <div class="hero-glow"></div>
-<<<<<<< HEAD
-    <div class="badge">Kazakhstan IT Job Market</div>
-    <h1>
-      Analytics of<br>
-      <span class="highlight">IT Vacancies</span><br>
-      and AI Career Assistant
-    </h1>
-    <p class="subtitle">
-      Explore salaries, skills, cities, experience levels, and get a profession recommendation based on your resume.
-    </p>
-    <a href="/dashboard" class="btn-primary">Start Analysis →</a>
-=======
-    <div class="badge" data-i18n="badge">Рынок труда Казахстана</div>
-    <h1><span data-i18n="hero1">Аналитика</span><br><span class="highlight" data-i18n="hero2">IT-вакансий</span><br><span data-i18n="hero3">и AI Career Assistant</span></h1>
-    <p class="subtitle" data-i18n="subtitle">Исследуй зарплаты, навыки, города и получи рекомендацию профессии по своим навыкам или резюме.</p>
-    <a href="{% if current_user %}/dashboard{% else %}/login{% endif %}" class="btn-primary" data-i18n="start">Начать анализ →</a>
->>>>>>> e720c41 (added authorization)
-  </section>
+  <main>
+    <section class="hero">
+      <div class="hero-glow"></div>
 
-  <div class="stats" id="statsGrid">
-    <div class="stat-item">
-      <span class="stat-value" id="statTotal">—</span>
-      <span class="stat-label">Jobs in dataset</span>
-    </div>
+      <div class="badge" data-i18n="badge">
+        Kazakhstan job market
+      </div>
 
-    <div class="stat-item">
-      <span class="stat-value" id="statCompanies">—</span>
-      <span class="stat-label">Companies</span>
-    </div>
+      <h1>
+        <span data-i18n="hero1">Analytics of</span>
+        <br>
+        <span class="highlight" data-i18n="hero2">IT vacancies</span>
+        <br>
+        <span data-i18n="hero3">and AI Career Assistant</span>
+      </h1>
 
-    <div class="stat-item">
-      <span class="stat-value" id="statAvg">—</span>
-      <span class="stat-label">Average salary</span>
-    </div>
-  </div>
+      <p class="subtitle" data-i18n="subtitle">
+        Explore skills, cities, vacancies, and get a profession recommendation using your skills or resume.
+      </p>
+
+      <a
+        href="{% if current_user %}/dashboard{% else %}/login{% endif %}"
+        class="btn-primary"
+        data-i18n="start"
+      >
+        Start analysis →
+      </a>
+    </section>
+
+    <section class="stats" id="statsGrid">
+      <div class="stat-item">
+        <span class="stat-value" id="statTotal">—</span>
+        <span class="stat-label" data-i18n="jobsInBase">Jobs in dataset</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-value" id="statCompanies">—</span>
+        <span class="stat-label" data-i18n="companies">Companies</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-value" id="statAvg">—</span>
+        <span class="stat-label" data-i18n="avgSalary">Average salary</span>
+      </div>
+    </section>
+  </main>
 
   <script src="/static/script.js"></script>
+
   <script>
     loadLandingStats();
   </script>
+
 </body>
 </html>

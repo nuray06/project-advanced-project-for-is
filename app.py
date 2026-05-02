@@ -10,10 +10,8 @@ import os
 from html import unescape
 from io import BytesIO
 from collections import Counter
+from pathlib import Path
 
-
-app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 from werkzeug.security import check_password_hash, generate_password_hash
 
 try:
@@ -167,6 +165,15 @@ if "name" in df.columns and "title" not in df.columns:
     df.rename(columns={"name": "title"}, inplace=True)
 elif "title" not in df.columns:
     df["title"] = ""
+CSV_PATH = Path("jobs.csv")
+
+if not CSV_PATH.exists():
+    CSV_PATH = Path("jobs(3).csv")
+
+df = pd.read_csv(CSV_PATH)
+
+if "name" in df.columns and "title" not in df.columns:
+    df.rename(columns={"name": "title"}, inplace=True)
 
 for col in [
     "title",
@@ -177,7 +184,10 @@ for col in [
     "url",
     "currency",
     "employment",
-    "schedule"
+    "schedule",
+    "salary_from",
+    "salary_to",
+    "published_at",
 ]:
     if col not in df.columns:
         df[col] = ""
@@ -201,6 +211,13 @@ df["city"] = df["city"].fillna("Not specified")
 df["title"] = df["title"].fillna("No title")
 df["company"] = df["company"].fillna("Not specified")
 df["url"] = df["url"].fillna("")
+df["currency"] = df["currency"].fillna("KZT")
+
+salary_from = pd.to_numeric(df["salary_from"], errors="coerce")
+salary_to = pd.to_numeric(df["salary_to"], errors="coerce")
+
+df["salary"] = (salary_from + salary_to) / 2
+df["salary"] = df["salary"].fillna(salary_from).fillna(salary_to)
 
 RUB_TO_KZT = 5.5
 USD_TO_KZT = 450
@@ -472,6 +489,12 @@ CAREER_PROFILES = {
         "statistics", "python", "pandas", "numpy", "data science",
         "машинное обучение", "машинного обучения", "нейронные сети",
         "модели", "искусственный интеллект"
+        "analytics", "аналитик", "data", "dashboard", "bi"
+    ],
+    "Data Scientist / ML Engineer": [
+        "machine learning", "ml", "pytorch", "tensorflow", "sklearn",
+        "scikit", "nlp", "computer vision", "bert", "model",
+        "нейрон", "statistics"
     ],
     "Backend Developer": [
         "python", "java", "spring", "fastapi", "django", "flask",
@@ -507,6 +530,31 @@ CAREER_PROFILES = {
         "product", "project", "agile", "scrum", "jira", "manager",
         "requirements", "roadmap", "stakeholders", "business analysis",
         "проект", "продукт", "менеджер"
+        "backend", "бэкенд"
+    ],
+    "Frontend Developer": [
+        "html", "css", "javascript", "typescript", "react", "vue",
+        "angular", "frontend", "фронтенд", "ui"
+    ],
+    "DevOps Engineer": [
+        "docker", "kubernetes", "linux", "ci/cd", "jenkins",
+        "terraform", "ansible", "nginx", "devops", "cloud"
+    ],
+    "QA Engineer": [
+        "qa", "testing", "selenium", "test", "автотест",
+        "postman", "pytest", "quality assurance"
+    ],
+    "Mobile Developer": [
+        "android", "ios", "kotlin", "swift", "flutter",
+        "react native", "mobile", "мобильн"
+    ],
+    "Cybersecurity Specialist": [
+        "security", "cybersecurity", "owasp", "pentest", "siem",
+        "безопасность", "кибербезопасность"
+    ],
+    "Project / Product Manager": [
+        "product", "project", "agile", "scrum", "jira", "manager",
+        "requirements", "roadmap", "аналитик", "бизнес"
     ]
 }
 
@@ -553,6 +601,7 @@ def extract_resume_text(file_storage):
                 pages.append(page.extract_text() or "")
 
             return "\n".join(pages)
+
         except Exception:
             return ""
 
@@ -665,6 +714,12 @@ def keyword_profile_scores(text):
             if kw in text_lower:
                 score += weight
 
+        for keyword in keywords:
+            if keyword in text_lower:
+                score += 2 if " " in keyword else 1
+
+        scores[profession] = score
+
         scores[profession] = score / max_score if max_score else 0
 
     return scores
@@ -756,6 +811,90 @@ def match_jobs_ml(text, detected_skills, limit=8):
     if not text:
         return []
 
+    detected_set = set(detected_skills)
+
+    vacancy_docs = df["search_text"].fillna("").astype(str).tolist()
+    documents = [text] + vacancy_docs
+
+    vectors = build_tfidf_vectors(documents, max_features=12000)
+    resume_vector = vectors[0]
+    vacancy_vectors = vectors[1:]
+
+    similarities = [
+        cosine_similarity_dict(resume_vector, vacancy_vector)
+        for vacancy_vector in vacancy_vectors
+    ]
+
+    candidates = []
+
+    for idx, row in df.iterrows():
+        score = float(similarities[idx])
+
+        if score <= 0:
+            continue
+
+        row_text = (
+            str(row.get("skills", "")) + " " +
+            str(row.get("description_clean", "")) + " " +
+            str(row.get("title", ""))
+        ).lower()
+
+        required_skills = [
+            skill for skill in ALL_SKILLS
+            if skill and skill in row_text
+        ]
+
+        matched_skills = sorted(set(required_skills) & detected_set)
+        missing_skills = sorted(set(required_skills) - detected_set)[:6]
+
+        candidates.append({
+            "row": row,
+            "score": score,
+            "matched_skills": matched_skills[:8],
+            "missing_skills": missing_skills
+        })
+
+    candidates = sorted(
+        candidates,
+        key=lambda x: (
+            x["score"],
+            0 if pd.isna(x["row"]["salary_kzt"]) else x["row"]["salary_kzt"]
+        ),
+        reverse=True
+    )[:limit]
+
+    results = []
+
+    for item in candidates:
+        row = item["row"]
+        match_score = int(round(min(99, max(1, item["score"] * 180))))
+        description = str(row.get("description_clean", ""))
+
+        results.append({
+            "title": row.get("title", "No title"),
+            "company": row.get("company", "Not specified"),
+            "city": row.get("city", "Not specified"),
+            "salary": format_salary(row.get("salary_kzt")),
+            "salary_raw": None if pd.isna(row.get("salary_kzt")) else int(row.get("salary_kzt")),
+            "url": row.get("url", ""),
+            "description": description[:380] + ("..." if len(description) > 380 else ""),
+            "matched_skills": item["matched_skills"],
+            "skills_to_improve": item["missing_skills"],
+            "match_score": match_score,
+            "experience_level": row.get("experience_level", "Not specified")
+        })
+
+    return results
+
+def format_salary(value):
+    if pd.isna(value) or value is None:
+        return "Не указана"
+
+    return f"{int(value):,} ₸".replace(",", " ")
+
+    if not text:
+        return []
+
     vacancy_docs = df["search_text"].fillna("").astype(str).tolist()
     documents = [text] + vacancy_docs
 
@@ -804,6 +943,52 @@ def match_jobs_ml(text, detected_skills, limit=8):
             0 if pd.isna(x["row"]["salary_kzt"]) else x["row"]["salary_kzt"]
         ),
         reverse=True
+    )
+    def score_row(row):
+        search_text = row["search_text"]
+        score = 0
+        matched = []
+
+        for token in important:
+            if token and token in search_text:
+                score += 1
+
+                if token in ALL_SKILLS:
+                    matched.append(token)
+
+        title_lower = str(row["title"]).lower()
+
+        for part in profession.lower().split("/"):
+            for word in part.split():
+                if len(word) > 2 and word in title_lower:
+                    score += 2
+
+        return score, sorted(set(matched))
+
+    rows = []
+
+    for _, row in df.iterrows():
+        score, matched = score_row(row)
+
+        if score > 0:
+            rows.append((score, matched, row))
+
+    if not rows:
+        fallback = df.copy()
+        fallback["salary_sort"] = fallback["salary_kzt"].fillna(0)
+
+        rows = [
+            (1, [], row)
+            for _, row in fallback.sort_values("salary_sort", ascending=False).head(limit).iterrows()
+        ]
+
+    rows = sorted(
+        rows,
+        key=lambda x: (
+            x[0],
+            0 if pd.isna(x[2]["salary_kzt"]) else x[2]["salary_kzt"]
+        ),
+        reverse=True
     )[:limit]
 
     results = []
@@ -811,6 +996,14 @@ def match_jobs_ml(text, detected_skills, limit=8):
     for item in candidates:
         row = item["row"]
         match_score = int(round(min(99, max(1, item["score"] * 180))))
+    for score, matched, row in rows:
+        required_text = (
+            str(row.get("skills", "")) + " " +
+            str(row.get("description_clean", ""))
+        ).lower()
+
+        required_found = [skill for skill in ALL_SKILLS if skill in required_text]
+        skills_to_improve = sorted(set(required_found) - detected)[:6]
 
         results.append({
             "title": row["title"],
@@ -823,7 +1016,13 @@ def match_jobs_ml(text, detected_skills, limit=8):
             "matched_skills": item["matched_skills"],
             "skills_to_improve": item["missing_skills"],
             "match_score": match_score,
-            "experience_level": row.get("experience_level", "Not specified")
+            "experience_level": row.get("experience_level", "Not specified"),
+            "description": row["description_clean"][:380] + (
+                "..." if len(row["description_clean"]) > 380 else ""
+            ),
+            "matched_skills": matched[:8],
+            "skills_to_improve": skills_to_improve,
+            "match_score": int(score)
         })
 
     return results
@@ -1264,12 +1463,43 @@ def dashboard():
 
 
 # -----------------------------
+# Overview filter helper
+# -----------------------------
+def get_overview_filtered_df():
+    profession = request.args.get("profession", "").strip()
+
+    if profession:
+        return df[df["title"] == profession].copy()
+
+    return df.copy()
+
+
+@app.route("/api/professions")
+def professions():
+    professions_list = (
+        df["title"]
+        .dropna()
+        .astype(str)
+        .sort_values()
+        .unique()
+        .tolist()
+    )
+
+    return jsonify(professions_list)
+
+
+# -----------------------------
 # Analytics API
 # -----------------------------
 @app.route("/api/skills")
 @login_required
 def skills():
-    skills_series = df["skills"].str.split(",").explode().fillna("")
+    filtered = get_overview_filtered_df()
+
+    if filtered.empty:
+        return jsonify({})
+
+    skills_series = filtered["skills"].str.split(",").explode().fillna("")
     skills_series = skills_series.str.strip().str.lower()
     skills_series = skills_series[skills_series != ""]
 
@@ -1308,7 +1538,193 @@ def salary_quality():
 @app.route("/api/cities")
 @login_required
 def cities():
-    return jsonify(df["city"].value_counts().head(10).to_dict())
+    filtered = get_overview_filtered_df()
+
+    if filtered.empty:
+        return jsonify({})
+
+    cities_series = (
+        filtered["city"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+    )
+
+    cities_series = cities_series[cities_series != ""]
+
+    return jsonify(cities_series.value_counts().to_dict())
+def normalize_region_text(text):
+    text = str(text or "").strip().lower()
+
+    replacements = {
+        "ё": "е",
+        "қ": "к",
+        "ғ": "г",
+        "ң": "н",
+        "ә": "а",
+        "ө": "о",
+        "ү": "у",
+        "ұ": "у",
+        "і": "и",
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    text = text.replace("область", "")
+    text = text.replace("облысы", "")
+    text = text.replace("region", "")
+    text = text.replace("oblast", "")
+    text = re.sub(r"\s+", " ", text).strip()
+
+    return text
+
+
+CITY_TO_REGION = {
+    "алматы": "almaty",
+    "almaty": "almaty",
+
+    "астана": "akmola",
+    "astana": "akmola",
+    "нур-султан": "akmola",
+    "nur-sultan": "akmola",
+    "nur sultan": "akmola",
+
+    "шымкент": "turkistan",
+    "shymkent": "turkistan",
+
+    "актау": "mangystau",
+    "aktau": "mangystau",
+
+    "атырау": "atyrau",
+    "atyrau": "atyrau",
+
+    "актобе": "aktobe",
+    "актабе": "aktobe",
+    "aktobe": "aktobe",
+
+    "караганда": "karaganda",
+    "қарағанды": "karaganda",
+    "karaganda": "karaganda",
+
+    "павлодар": "pavlodar",
+    "pavlodar": "pavlodar",
+
+    "семей": "abay",
+    "semey": "abay",
+
+    "усть-каменогорск": "east kazakhstan",
+    "оскемен": "east kazakhstan",
+    "өскемен": "east kazakhstan",
+    "oskemen": "east kazakhstan",
+
+    "костанай": "kostanay",
+    "қостанай": "kostanay",
+    "kostanay": "kostanay",
+
+    "кызылорда": "kyzylorda",
+    "қызылорда": "kyzylorda",
+    "kyzylorda": "kyzylorda",
+
+    "тараз": "zhambyl",
+    "taraz": "zhambyl",
+
+    "уральск": "west kazakhstan",
+    "орал": "west kazakhstan",
+    "oral": "west kazakhstan",
+
+    "петропавловск": "north kazakhstan",
+    "petropavlovsk": "north kazakhstan",
+
+    "кокшетау": "akmola",
+    "kokshetau": "akmola",
+
+    "талдыкорган": "jetisu",
+    "taldykorgan": "jetisu",
+
+    "туркестан": "turkistan",
+    "turkistan": "turkistan",
+
+    "жезказган": "ulytau",
+    "жезқазған": "ulytau",
+    "zhezkazgan": "ulytau",
+}
+
+
+@app.route("/api/region-jobs")
+def region_jobs():
+    filtered = get_overview_filtered_df()
+
+    if filtered.empty:
+        return jsonify({})
+
+    city_counts = (
+        filtered["city"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .value_counts()
+    )
+
+    result = {}
+
+    for city, count in city_counts.items():
+        city_key = normalize_region_text(city)
+        region = CITY_TO_REGION.get(city_key)
+
+        if region:
+            result[region] = result.get(region, 0) + int(count)
+
+    return jsonify(result)
+
+@app.route("/api/vacancy-dynamics")
+def vacancy_dynamics():
+    filtered = get_overview_filtered_df()
+
+    if filtered.empty:
+        return jsonify({})
+
+    if "published_at" not in filtered.columns:
+        return jsonify({})
+
+    temp = filtered.copy()
+
+    temp["published_at"] = pd.to_datetime(
+        temp["published_at"],
+        errors="coerce"
+    )
+
+    temp = temp[temp["published_at"].notna()]
+
+    if temp.empty:
+        return jsonify({})
+
+    temp["vacancy_date"] = temp["published_at"].dt.date
+
+    dynamics = (
+        temp.groupby("vacancy_date")
+        .size()
+        .sort_index()
+    )
+
+    return jsonify({
+        str(date): int(count)
+        for date, count in dynamics.items()
+    })
+
+
+@app.route("/api/top-companies")
+def top_companies():
+    filtered = get_overview_filtered_df()
+
+    if filtered.empty:
+        return jsonify({})
+
+    companies = filtered["company"].fillna("Не указана")
+    companies = companies.replace("", "Не указана")
+
+    return jsonify(companies.value_counts().head(7).to_dict())
+
 
 
 @app.route("/api/employment")
@@ -1535,6 +1951,13 @@ def stats():
     avg_salary = df["salary_kzt"].mean()
     top_city = df["city"].value_counts().idxmax()
     unique_companies = df["company"].nunique()
+    filtered = get_overview_filtered_df()
+
+    total = len(filtered)
+    with_salary = int(filtered["salary_kzt"].notna().sum()) if total > 0 else 0
+    avg_salary = filtered["salary_kzt"].mean() if total > 0 else None
+    top_city = filtered["city"].value_counts().idxmax() if total > 0 else "—"
+    unique_companies = int(filtered["company"].nunique()) if total > 0 else 0
 
     return jsonify({
         "total_jobs": total,
@@ -1549,8 +1972,10 @@ def stats():
 @app.route("/api/filter")
 @login_required
 def filter_jobs():
-    title = request.args.get("title", "")
-    city = request.args.get("city", "")
+    title = request.args.get("title", "").strip()
+    city = request.args.get("city", "").strip()
+    min_salary = request.args.get("min_salary", "").strip()
+
     page = int(request.args.get("page", 1))
     per_page = 20
 
@@ -1562,7 +1987,39 @@ def filter_jobs():
     if city:
         filtered = filtered[filtered["city"] == city]
 
+    if min_salary:
+        try:
+            clean_salary = min_salary.replace(" ", "").replace(",", "")
+            min_salary_value = float(clean_salary)
+
+            filtered = filtered[
+                filtered["salary_kzt"].notna() &
+                (filtered["salary_kzt"] >= min_salary_value)
+            ].copy()
+
+            filtered["salary_distance"] = filtered["salary_kzt"] - min_salary_value
+
+            filtered = filtered.sort_values(
+                by=["salary_distance", "salary_kzt"],
+                ascending=[True, True]
+            )
+
+        except ValueError:
+            filtered = filtered.sort_values(
+                by="salary_kzt",
+                ascending=False,
+                na_position="last"
+            )
+
+    else:
+        filtered = filtered.sort_values(
+            by="salary_kzt",
+            ascending=False,
+            na_position="last"
+        )
+
     total = len(filtered)
+
     filtered = filtered.iloc[(page - 1) * per_page: page * per_page]
 
     result = filtered[["title", "company", "salary_kzt", "city", "url"]].copy()
@@ -1669,7 +2126,6 @@ def classify():
         "prediction": profession,
         "confidence": confidence
     })
-
 
 if __name__ == "__main__":
     app.run(debug=True)
