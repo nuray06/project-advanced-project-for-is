@@ -1,4 +1,5 @@
 Flask
 pandas
 PyPDF2
-scikit-learn
+psycopg2-binary
+python-dotenv
