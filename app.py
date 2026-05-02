@@ -33,7 +33,7 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB resume limit
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-change-this-secret-key")
 AUTH_DB = os.path.join(app.root_path, "users.db")
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_sWxca8ySXOf3@ep-rapid-dew-anj6sgha-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 USE_POSTGRES = bool(DATABASE_URL)
 AUTH_INTEGRITY_ERRORS = (sqlite3.IntegrityError,)
 if PostgresIntegrityError:
