@@ -37,6 +37,7 @@ body::before {
     linear-gradient(90deg, rgba(110, 231, 183, .03) 1px, transparent 1px);
   background-size: 60px 60px;
   pointer-events: none;
+  z-index: 0;
 }
 
 /* =========================
@@ -83,6 +84,17 @@ body::before {
   color: var(--text);
 }
 
+.lang-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
 .landing .hero {
   min-height: 75vh;
   display: flex;
@@ -92,6 +104,7 @@ body::before {
   text-align: center;
   padding: 40px 20px;
   position: relative;
+  z-index: 1;
 }
 
 .hero-glow {
@@ -168,6 +181,8 @@ body::before {
   border-radius: 20px;
   overflow: hidden;
   background: var(--border);
+  position: relative;
+  z-index: 1;
 }
 
 .stat-item {
@@ -176,14 +191,13 @@ body::before {
   padding: 28px;
 }
 
-/* цифры на главной такие же по шрифту, как Overview / Skills */
 .stat-value {
+  display: block;
   font-family: var(--font-display);
   color: var(--accent);
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  display: block;
 }
 
 .stat-label {
@@ -223,7 +237,6 @@ body::before {
   margin-bottom: 16px;
 }
 
-/* Overview / Skills / Salaries / Jobs */
 .nav-item,
 .nav-item span {
   font-family: var(--font-display);
@@ -265,10 +278,45 @@ body::before {
   margin-top: 8px;
 }
 
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  color: var(--accent);
+  border: 1px solid rgba(110, 231, 183, .22);
+  background: rgba(110, 231, 183, .08);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-family: var(--font-display);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.nav-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+
+.logout-button {
+  text-align: left;
+}
+
 .main {
   margin-left: var(--sidebar);
   padding: 36px 40px;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .page {
@@ -313,7 +361,6 @@ body::before {
   padding: 22px;
 }
 
-/* Total Jobs / Companies / Average Salary / Top City */
 .kpi-label {
   color: var(--muted);
   font-size: .75rem;
@@ -324,7 +371,6 @@ body::before {
   font-weight: 700;
 }
 
-/* KPI цифры — такой же стиль, как Overview / Skills */
 .kpi-value {
   font-family: var(--font-display);
   font-size: 1.85rem;
@@ -371,261 +417,9 @@ canvas {
 }
 
 /* =========================
-   FILTERS AND TABLE
+   OVERVIEW FILTER
 ========================= */
 
-.filter-bar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.filter-select,
-textarea {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 12px;
-  padding: 12px 14px;
-  outline: none;
-  font-family: var(--font-main);
-}
-
-.filter-select {
-  flex: 1;
-}
-
-.results-table {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  background: var(--surface2);
-  color: var(--muted);
-  font-size: .75rem;
-  text-align: left;
-  padding: 14px;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-  font-family: var(--font-display);
-  font-weight: 700;
-}
-
-td {
-  padding: 14px;
-  border-bottom: 1px solid var(--border);
-  font-size: .88rem;
-}
-
-tr:hover td {
-  background: rgba(255, 255, 255, .03);
-}
-
-.salary-badge {
-  color: var(--accent);
-  font-weight: 700;
-  font-family: var(--font-display);
-  letter-spacing: -0.01em;
-}
-
-.job-link {
-  color: var(--accent2);
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.pagination {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  padding: 18px;
-}
-
-.page-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.page-btn:disabled {
-  opacity: .35;
-}
-
-.page-info {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--muted);
-  letter-spacing: -0.01em;
-}
-
-/* =========================
-   CAREER ASSISTANT
-========================= */
-
-.assistant-card textarea {
-  width: 100%;
-  height: 150px;
-  resize: vertical;
-  margin-bottom: 14px;
-}
-
-.upload-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.upload-row input {
-  background: var(--surface2);
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  padding: 12px;
-  color: var(--muted);
-  flex: 1;
-  font-family: var(--font-main);
-}
-
-.career-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
-  margin: 20px 0;
-}
-
-.summary-card,
-.job-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.summary-card h3,
-.job-card h3 {
-  font-family: var(--font-display);
-  margin-bottom: 8px;
-  letter-spacing: -0.01em;
-  font-weight: 700;
-}
-
-.tag {
-  display: inline-block;
-  background: rgba(110, 231, 183, .09);
-  border: 1px solid rgba(110, 231, 183, .2);
-  color: var(--accent);
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: .78rem;
-  margin: 3px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.tag.orange {
-  background: rgba(251, 146, 60, .09);
-  border-color: rgba(251, 146, 60, .25);
-  color: var(--accent3);
-}
-
-.job-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.job-meta {
-  color: var(--muted);
-  margin: 8px 0;
-  line-height: 1.5;
-}
-
-.job-desc {
-  color: #cbd5e1;
-  font-size: .9rem;
-  line-height: 1.55;
-  margin: 10px 0;
-}
-
-/* =========================
-   ABOUT
-========================= */
-
-.about-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.info-card h3 {
-  font-family: var(--font-display);
-  letter-spacing: -0.01em;
-  font-weight: 700;
-}
-
-.info-card p {
-  color: var(--muted);
-  line-height: 1.6;
-  margin-top: 8px;
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-@media (max-width: 900px) {
-  .sidebar {
-    position: relative;
-    width: 100%;
-    height: auto;
-  }
-
-  .app-body {
-    display: block;
-  }
-
-  .main {
-    margin-left: 0;
-    padding: 24px;
-  }
-
-  .kpi-grid,
-  .charts-grid,
-  .career-summary,
-  .job-grid,
-  .about-grid,
-  .stats {
-    grid-template-columns: 1fr;
-  }
-
-  .stats {
-    margin: 20px;
-  }
-
-  .top-nav {
-    padding: 18px 20px;
-  }
-
-  .filter-bar {
-    flex-direction: column;
-  }
-}
 .overview-filter {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -723,18 +517,58 @@ tr:hover td {
   color: var(--accent);
 }
 
-@media (max-width: 900px) {
-  .overview-filter {
-    grid-template-columns: 1fr;
-  }
-}
-.chart-card.full:has(#citiesChart) {
-  padding: 18px;
+/* =========================
+   MAP
+========================= */
+
+.map-chart,
+.region-map,
+#citiesChart.map-chart,
+#kzRegionMap {
+  width: 100%;
+  height: 520px;
+  min-height: 520px;
+  background: #f3f4f6;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
 }
 
-.chart-card.full:has(#citiesChart) .chart-title {
-  margin-bottom: 10px;
+#citiesChart .modebar,
+#kzRegionMap .modebar {
+  display: none !important;
 }
+
+#vacancyDynamicsChart {
+  max-height: 320px;
+}
+
+/* =========================
+   FILTERS AND TABLE
+========================= */
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-select,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  outline: none;
+  font-family: var(--font-main);
+}
+
+.filter-select {
+  flex: 1;
+}
+
 .salary-input {
   min-width: 220px;
 }
@@ -743,11 +577,353 @@ tr:hover td {
   color: var(--muted);
 }
 
-@media (max-width: 900px) {
-  .salary-input {
-    min-width: 100%;
-  }
+.results-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
 }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: .75rem;
+  text-align: left;
+  padding: 14px;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: .88rem;
+}
+
+tr:hover td {
+  background: rgba(255, 255, 255, .03);
+}
+
+.salary-badge {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.job-link {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.pagination {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  padding: 18px;
+}
+
+.page-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.page-btn:disabled {
+  opacity: .35;
+}
+
+.page-info {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+/* =========================
+   CHARACTERISTICS
+========================= */
+
+.characteristics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.section-note {
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.5;
+  margin: -8px 0 18px;
+}
+
+.inside-analytics-block {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.inside-analytics-header {
+  margin-bottom: 16px;
+}
+
+.inside-analytics-header h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.inside-analytics-header p {
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: .9rem;
+}
+
+.analytics-control-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.analytics-control-row .filter-select {
+  min-width: 220px;
+}
+
+.small-btn {
+  padding: 11px 18px;
+  min-width: 120px;
+}
+
+.insight-box {
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.insight-box b {
+  color: var(--text);
+}
+
+.mini-note {
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.two-chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  grid-column: 1 / -1;
+}
+
+.two-chart-row .chart-card {
+  min-width: 0;
+}
+
+.two-chart-row canvas {
+  max-height: 320px;
+}
+
+/* =========================
+   CAREER ASSISTANT
+========================= */
+
+.assistant-card textarea {
+  width: 100%;
+  height: 150px;
+  resize: vertical;
+  margin-bottom: 14px;
+}
+
+.upload-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upload-row input {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--muted);
+  flex: 1;
+  font-family: var(--font-main);
+}
+
+.custom-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-choose-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.file-choose-btn:hover {
+  border-color: rgba(110, 231, 183, .35);
+  color: var(--accent);
+}
+
+.file-name {
+  color: var(--muted);
+  font-size: .95rem;
+  max-width: 360px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.file-name.selected {
+  color: var(--text);
+}
+
+.clear-file-btn {
+  display: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(239, 68, 68, .35);
+  background: rgba(239, 68, 68, .08);
+  color: #f87171;
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.clear-file-btn.show {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-file-btn:hover {
+  background: rgba(239, 68, 68, .16);
+  border-color: rgba(239, 68, 68, .55);
+}
+
+.analyze-btn {
+  margin-left: auto;
+}
+
+.career-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.summary-card,
+.job-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.summary-card h3,
+.job-card h3 {
+  font-family: var(--font-display);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.tag {
+  display: inline-block;
+  background: rgba(110, 231, 183, .09);
+  border: 1px solid rgba(110, 231, 183, .2);
+  color: var(--accent);
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: .78rem;
+  margin: 3px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tag.orange {
+  background: rgba(251, 146, 60, .09);
+  border-color: rgba(251, 146, 60, .25);
+  color: var(--accent3);
+}
+
+.job-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.job-meta {
+  color: var(--muted);
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.job-desc {
+  color: #cbd5e1;
+  font-size: .9rem;
+  line-height: 1.55;
+  margin: 10px 0;
+}
+
+/* =========================
+   ABOUT
+========================= */
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.info-card h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.info-card p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
 .team-section {
   margin-top: 32px;
 }
@@ -831,9 +1007,80 @@ tr:hover td {
   line-height: 1.55;
 }
 
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 1100px) {
   .team-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  .app-body {
+    display: block;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 24px;
+  }
+
+  .kpi-grid,
+  .charts-grid,
+  .career-summary,
+  .job-grid,
+  .about-grid,
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .two-chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    margin: 20px;
+  }
+
+  .top-nav {
+    padding: 18px 20px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+
+  .salary-input {
+    min-width: 100%;
+  }
+
+  .overview-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-upload {
+    align-items: stretch;
+  }
+
+  .file-choose-btn,
+  .analyze-btn {
+    width: 100%;
+  }
+
+  .analyze-btn {
+    margin-left: 0;
+  }
+
+  .file-name {
+    max-width: calc(100% - 50px);
   }
 }
 
@@ -841,7 +1088,4 @@ tr:hover td {
   .team-grid {
     grid-template-columns: 1fr;
   }
-}
-#vacancyDynamicsChart {
-  max-height: 320px;
 }

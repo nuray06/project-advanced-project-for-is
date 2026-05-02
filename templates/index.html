@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/auth.css">
 </head>
 
 <body class="landing">
@@ -17,7 +18,27 @@
     <div class="logo">Job<span>Scope</span> KZ</div>
 
     <div class="nav-actions">
-      <a href="/dashboard" class="nav-link" data-i18n="openDashboard">Open Dashboard →</a>
+      {% if current_user %}
+        <span class="user-pill">{{ current_user.username }}</span>
+
+        <a href="/dashboard" class="nav-link" data-i18n="openDashboard">
+          Open Dashboard →
+        </a>
+
+        <form action="/logout" method="post" class="inline-form">
+          <button class="nav-link nav-button" type="submit">
+            Logout
+          </button>
+        </form>
+      {% else %}
+        <a href="/login" class="nav-link">
+          Login
+        </a>
+
+        <a href="/register" class="nav-link auth-nav-link">
+          Register
+        </a>
+      {% endif %}
     </div>
   </header>
 
@@ -25,7 +46,9 @@
     <section class="hero">
       <div class="hero-glow"></div>
 
-      <div class="badge" data-i18n="badge">Kazakhstan job market</div>
+      <div class="badge" data-i18n="badge">
+        Kazakhstan job market
+      </div>
 
       <h1>
         <span data-i18n="hero1">Analytics of</span>
@@ -39,10 +62,16 @@
         Explore skills, cities, vacancies, and get a profession recommendation using your skills or resume.
       </p>
 
-      <a href="/dashboard" class="btn-primary" data-i18n="start">Start analysis →</a>
+      <a
+        href="{% if current_user %}/dashboard{% else %}/login{% endif %}"
+        class="btn-primary"
+        data-i18n="start"
+      >
+        Start analysis →
+      </a>
     </section>
 
-    <section class="stats">
+    <section class="stats" id="statsGrid">
       <div class="stat-item">
         <span class="stat-value" id="statTotal">—</span>
         <span class="stat-label" data-i18n="jobsInBase">Jobs in dataset</span>
@@ -61,6 +90,7 @@
   </main>
 
   <script src="/static/script.js"></script>
+
   <script>
     loadLandingStats();
   </script>

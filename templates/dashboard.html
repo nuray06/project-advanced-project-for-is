@@ -12,6 +12,7 @@
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/auth.css">
 </head>
 
 <body class="app-body">
@@ -24,12 +25,8 @@
         <span data-i18n="overview">Overview</span>
       </div>
 
-      <div class="nav-item" onclick="showPage(event,'skills')">
-        <span data-i18n="skills">Skills</span>
-      </div>
-
-      <div class="nav-item" onclick="showPage(event,'salary')">
-        <span data-i18n="salary">Salaries</span>
+      <div class="nav-item" onclick="showPage(event,'characteristics')">
+        <span>Characteristics</span>
       </div>
 
       <div class="nav-item" onclick="showPage(event,'jobs')">
@@ -46,6 +43,16 @@
     </nav>
 
     <div class="sidebar-footer">
+      {% if current_user %}
+        <div class="user-pill">{{ current_user.username }}</div>
+
+        <form action="/logout" method="post" class="inline-form full-width">
+          <button class="back-link nav-button logout-button" type="submit">
+            Logout
+          </button>
+        </form>
+      {% endif %}
+
       <a href="/" class="back-link" data-i18n="backHome">← Home</a>
     </div>
   </aside>
@@ -80,7 +87,9 @@
       </div>
 
       <div class="overview-filter">
-        <label class="filter-label" data-i18n="overviewProfession">Profession</label>
+        <label class="filter-label" data-i18n="overviewProfession">
+          Profession
+        </label>
 
         <div class="custom-select" id="overviewProfessionDropdown">
           <button
@@ -101,19 +110,23 @@
           <div class="chart-title">
             <span data-i18n="jobsByCity">Jobs by region</span>
           </div>
-          <div id="citiesChart" class="map-chart"></div>
+
+          <div id="kzRegionMap" class="region-map"></div>
         </div>
-          <div class="chart-card full">
-              <div class="chart-title">
-                  <span data-i18n="vacancyDynamics">Vacancy dynamics</span>
-              </div>
-              <canvas id="vacancyDynamicsChart"></canvas>
+
+        <div class="chart-card full">
+          <div class="chart-title">
+            <span data-i18n="vacancyDynamics">Vacancy dynamics</span>
           </div>
+
+          <canvas id="vacancyDynamicsChart"></canvas>
+        </div>
 
         <div class="chart-card">
           <div class="chart-title">
             <span data-i18n="topSkills10">Top-10 skills</span>
           </div>
+
           <canvas id="skillsOverviewChart"></canvas>
         </div>
 
@@ -121,28 +134,118 @@
           <div class="chart-title">
             <span data-i18n="topCompanies7">Top 7 companies with open vacancies</span>
           </div>
+
           <canvas id="companiesOverviewChart"></canvas>
         </div>
       </div>
     </section>
 
-    <!-- SKILLS PAGE -->
-    <section class="page" id="page-skills">
-      <h1 class="page-title" data-i18n="demandedSkills">In-demand skills</h1>
-      <p class="page-subtitle" data-i18n="skillsSub">Top-15 skills by mentions</p>
+    <!-- CHARACTERISTICS PAGE -->
+    <section class="page" id="page-characteristics">
+      <h1 class="page-title">Characteristics</h1>
+      <p class="page-subtitle">
+        Skills, salaries, work format, and experience levels in IT vacancies
+      </p>
 
-      <div class="chart-card">
-        <canvas id="skillsChart"></canvas>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Junior Accessibility Index</div>
+          <div class="kpi-value small" id="charJuniorIndex">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Remote Flexibility</div>
+          <div class="kpi-value small purple" id="charRemoteFlexibility">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Salary Transparency Score</div>
+          <div class="kpi-value small" id="charSalaryTransparency">—</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Skills Density</div>
+          <div class="kpi-value small orange" id="charSkillsDensity">—</div>
+        </div>
       </div>
-    </section>
 
-    <!-- SALARY PAGE -->
-    <section class="page" id="page-salary">
-      <h1 class="page-title" data-i18n="salaryAnalysis">Salary analysis</h1>
-      <p class="page-subtitle" data-i18n="salarySub">Average salaries in KZT by position</p>
+      <div class="characteristics-grid">
+        <div class="chart-card full">
+          <div class="chart-title">Skills</div>
+          <p class="section-note">
+            Top-15 skills by number of mentions in vacancies
+          </p>
 
-      <div class="chart-card">
-        <canvas id="salaryChart"></canvas>
+          <canvas id="skillsChart"></canvas>
+
+          <div class="inside-analytics-block">
+            <div class="inside-analytics-header">
+              <h3>Skill Clusters</h3>
+              <p>
+                Choose a skill and see which skills most often appear together with it.
+              </p>
+            </div>
+
+            <div class="analytics-control-row">
+              <select id="clusterSkillSelect" class="filter-select"></select>
+
+              <button class="btn-primary small-btn" onclick="loadSkillClusters()">
+                Analyze →
+              </button>
+            </div>
+
+            <div id="clusterInsight" class="insight-box"></div>
+
+            <canvas id="skillClusterChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Salaries</div>
+          <p class="section-note">
+            Average salaries in KZT by position
+          </p>
+
+          <canvas id="salaryChart"></canvas>
+        </div>
+
+        <div class="two-chart-row">
+          <div class="chart-card">
+            <div class="chart-title">Employment Type Distribution</div>
+            <p class="section-note">
+              Shows how vacancies are distributed by employment type.
+            </p>
+
+            <canvas id="employmentChart"></canvas>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-title">Work Schedule Distribution</div>
+            <p class="section-note">
+              Shows the most common work formats: full day, remote, hybrid, flexible, shift, and rotational schedules.
+            </p>
+
+            <canvas id="scheduleChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Experience Level Distribution</div>
+          <p class="section-note">
+            Shows which experience levels appear most often in IT vacancy titles.
+          </p>
+
+          <canvas id="experienceChart"></canvas>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-title">Average Salary by Experience Level</div>
+          <p class="section-note">
+            Compares average salary in KZT for Junior, Middle, Senior, and other levels.
+          </p>
+
+          <canvas id="experienceSalaryChart"></canvas>
+        </div>
       </div>
     </section>
 
@@ -164,7 +267,7 @@
           type="number"
           id="salaryInput"
           class="filter-select salary-input"
-          placeholder="Salary, ₸"
+          placeholder="Minimum salary, ₸"
           min="0"
           step="10000"
         >
@@ -197,16 +300,36 @@
     <section class="page" id="page-career">
       <h1 class="page-title">AI Career Assistant</h1>
       <p class="page-subtitle" data-i18n="careerSub">
-        Write your skills or upload a resume (.txt/.pdf) to get a profession and matching vacancies.
+        Upload a resume (.txt/.pdf) to get a profession recommendation and matching vacancies.
       </p>
 
       <div class="assistant-card">
-        <textarea id="careerText" placeholder="Python, SQL, FastAPI, PostgreSQL, pandas..."></textarea>
 
-        <div class="upload-row">
-          <input type="file" id="resumeFile" accept=".txt,.pdf">
+        <div class="custom-upload">
+          <label for="resumeFile" class="file-choose-btn">
+            Choose resume
+          </label>
 
-          <button class="btn-primary" onclick="runCareerAssistant()" data-i18n="analyze">
+          <input
+            type="file"
+            id="resumeFile"
+            accept=".txt,.pdf"
+            hidden
+          >
+
+          <span id="resumeFileName" class="file-name">No file selected</span>
+
+          <button
+            type="button"
+            id="clearResumeBtn"
+            class="clear-file-btn"
+            onclick="clearResumeFile()"
+            title="Remove file"
+          >
+            ×
+          </button>
+
+          <button class="btn-primary analyze-btn" onclick="runCareerAssistant()" data-i18n="analyze">
             Analyze →
           </button>
         </div>
@@ -257,6 +380,9 @@
       <div class="team-section">
         <div class="section-header">
           <h2>Project creators</h2>
+          <p>
+            This dashboard was created as a group project by four students.
+          </p>
         </div>
 
         <div class="team-grid">
@@ -265,10 +391,10 @@
               <img src="/static/images/img1.jpg" alt="Project creator 1" class="team-photo">
             </div>
 
-            <h3>Akbota.A</h3>
+            <h3>Student Name 1</h3>
             <p class="team-role">Data Collection & Cleaning</p>
             <p class="team-desc">
-              Worked on vacancy dataset preparation, missing values, salary normalization, and data quality.
+              Prepared the vacancy dataset, cleaned missing values, normalized salaries, and checked data quality.
             </p>
           </div>
 
@@ -277,10 +403,10 @@
               <img src="/static/images/img2.jpg" alt="Project creator 2" class="team-photo">
             </div>
 
-            <h3>Aidana.T</h3>
+            <h3>Student Name 2</h3>
             <p class="team-role">Machine Learning & Career Assistant</p>
             <p class="team-desc">
-                Worked on profession recommendation logic, skill matching, resume analysis, and vacancy suggestions.
+              Worked on profession recommendation logic, skill matching, resume analysis, and vacancy suggestions.
             </p>
           </div>
 
@@ -289,10 +415,10 @@
               <img src="/static/images/img3.jpg" alt="Project creator 3" class="team-photo">
             </div>
 
-            <h3>Dilnaz.A</h3>
+            <h3>Student Name 3</h3>
             <p class="team-role">Backend Development</p>
             <p class="team-desc">
-                Built Flask routes, API endpoints, filtering logic, salary search, pagination, and data processing.
+              Built Flask routes, API endpoints, filtering logic, salary search, pagination, and data processing.
             </p>
           </div>
 
@@ -301,10 +427,10 @@
               <img src="/static/images/img4.jpg" alt="Project creator 4" class="team-photo">
             </div>
 
-            <h3>Nuray.S</h3>
+            <h3>Student Name 4</h3>
             <p class="team-role">Frontend Development</p>
             <p class="team-desc">
-                Designed the dashboard interface, pages, cards, tables, filters, layout, and responsive styling.
+              Designed the dashboard interface, pages, cards, tables, filters, layout, and responsive styling.
             </p>
           </div>
         </div>
