@@ -140,7 +140,7 @@ python app.py
 
 7. Open the website
 
-http://127.0.0.1:5000
+https://project-advanced-project-for-is-ehg9.onrender.com/
 
 Project Structure
 
